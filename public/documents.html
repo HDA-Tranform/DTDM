@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Danh Sách Tài Liệu</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body class="dashboard">
+  <div class="app">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="brand" onclick="window.location.href='dashboard.html'" style="cursor:pointer;">
+        <div class="brand-icon">📚</div>
+        <div class="brand-text">
+          <div class="brand-name">DTDMEdu</div>
+          <div class="brand-sub">Quản lý & chia sẻ tài liệu</div>
+        </div>
+      </div>
+
+      <div class="menu">
+        <div class="menu-title">Menu</div>
+        <a class="menu-item" href="dashboard.html">🏠 Dashboard</a>
+        <a class="menu-item active" href="documents.html">📄 Tài liệu</a>
+        <a class="menu-item" href="profile.html">👤 Trang cá nhân</a>
+        <a class="menu-item" href="payment.html">⭐ Nâng cấp</a>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+      <header class="topbar">
+        <div class="topbar-inner">
+          <div class="search">
+            <span class="hint">🔎 Tìm kiếm (UI)</span>
+            <input placeholder="Nhập từ khóa..." />
+          </div>
+
+          <div class="topbar-right">
+            <div class="user-chip">
+              <span class="user-dot"></span>
+              <span id="userName">Xin chào!</span>
+            </div>
+            <button onclick="window.location.href='dashboard.html'" class="btn btn-secondary">
+              Quay lại Dashboard
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">📄 Danh Sách Tất Cả Tài Liệu</h2>
+              <p class="card-subtitle">Xem và tải về tài liệu từ cộng đồng</p>
+            </div>
+          </div>
+
+          <div id="documentList" class="document-list">
+            <p style="text-align:center; color: rgba(255,255,255,0.6); margin:0;">Đang tải...</p>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="notification" class="notification"></div>
+  <script src="js/documents.js"></script>
+</body>
+</html>

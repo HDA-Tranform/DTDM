@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trang Cá Nhân</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body class="dashboard">
+  <div class="app">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="brand" onclick="window.location.href='dashboard.html'" style="cursor:pointer;">
+        <div class="brand-icon">📚</div>
+        <div class="brand-text">
+          <div class="brand-name">DTDMEdu</div>
+          <div class="brand-sub">Quản lý & chia sẻ tài liệu</div>
+        </div>
+      </div>
+
+      <div class="menu">
+        <div class="menu-title">Menu</div>
+        <a class="menu-item" href="dashboard.html">🏠 Dashboard</a>
+        <a class="menu-item" href="documents.html">📄 Tài liệu</a>
+        <a class="menu-item active" href="profile.html">👤 Trang cá nhân</a>
+        <a class="menu-item" href="payment.html">⭐ Nâng cấp</a>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+      <header class="topbar">
+        <div class="topbar-inner">
+          <div class="search">
+            <span class="hint">🔎 Tìm kiếm (UI)</span>
+            <input placeholder="Nhập từ khóa..." />
+          </div>
+
+          <div class="topbar-right">
+            <div class="user-chip">
+              <span class="user-dot"></span>
+              <span id="userName">Xin chào!</span>
+            </div>
+            <button onclick="window.location.href='dashboard.html'" class="btn btn-secondary">
+              Quay lại Dashboard
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <!-- Thông tin cá nhân -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">👤 Thông Tin Cá Nhân</h2>
+              <p class="card-subtitle">Thông tin tài khoản của bạn</p>
+            </div>
+          </div>
+
+          <div class="grid-3">
+            <div class="stat-box">
+              <p style="margin:0; color: rgba(255,255,255,0.62); font-size:0.85rem; text-transform:uppercase; letter-spacing:0.08em;">👤 Tên người dùng</p>
+              <h3 style="margin-top:10px;" id="profileUsername">...</h3>
+            </div>
+
+            <div class="stat-box">
+              <p style="margin:0; color: rgba(255,255,255,0.62); font-size:0.85rem; text-transform:uppercase; letter-spacing:0.08em;">✉️ Email</p>
+              <h3 style="margin-top:10px;" id="profileEmail">...</h3>
+            </div>
+
+            <div class="stat-box">
+              <p style="margin:0; color: rgba(255,255,255,0.62); font-size:0.85rem; text-transform:uppercase; letter-spacing:0.08em;">📅 Ngày đăng ký</p>
+              <h3 style="margin-top:10px;" id="profileCreatedAt">...</h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- Thông tin gói -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">📦 Thông Tin Gói</h2>
+              <p class="card-subtitle">Theo dõi quota và nâng cấp khi cần</p>
+            </div>
+          </div>
+
+          <div style="padding: 18px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.12);
+                      background: radial-gradient(600px 240px at 20% 10%, rgba(59,130,246,0.25), transparent 60%),
+                                  radial-gradient(520px 220px at 80% 40%, rgba(34,197,94,0.18), transparent 60%),
+                                  rgba(255,255,255,0.05);">
+            <p style="margin:0; color: rgba(255,255,255,0.70); text-transform:uppercase; letter-spacing:0.10em; font-size:0.82rem;">
+              Gói hiện tại
+            </p>
+            <h3 id="profilePlan" style="margin: 10px 0 6px; font-size: 2.2rem;">...</h3>
+            <p id="planDescription" style="margin:0; color: rgba(255,255,255,0.70);">...</p>
+          </div>
+
+          <div style="margin-top: 14px;">
+            <div class="grid-3">
+              <div class="stat-box">
+                <p style="margin:0; color: rgba(255,255,255,0.62); font-size:0.85rem; text-transform:uppercase; letter-spacing:0.08em;">✅ Đã upload</p>
+                <h3 style="margin-top:10px;" id="profileUploaded">0</h3>
+              </div>
+
+              <div class="stat-box" style="display:flex; align-items:center; justify-content:center;">
+                <div style="color: rgba(255,255,255,0.45); font-weight:900; font-size:2rem;">/</div>
+              </div>
+
+              <div class="stat-box">
+                <p style="margin:0; color: rgba(255,255,255,0.62); font-size:0.85rem; text-transform:uppercase; letter-spacing:0.08em;">🎯 Quota</p>
+                <h3 style="margin-top:10px;" id="profileQuota">0</h3>
+              </div>
+            </div>
+
+            <div style="margin-top: 12px; background: rgba(255,255,255,0.08); border-radius: 999px; height: 12px; overflow:hidden; border:1px solid rgba(255,255,255,0.10);">
+              <div id="quotaProgress" style="background: linear-gradient(90deg, rgba(59,130,246,1), rgba(96,165,250,1)); height: 100%; width: 0%; transition: width 0.5s ease;"></div>
+            </div>
+
+            <button onclick="window.location.href='payment.html'" class="btn btn-warning" id="upgradeBtn" style="margin-top: 14px; width: 100%; padding: 14px; font-size: 1.05rem;">
+              ⭐ Nâng Cấp Premium Ngay
+            </button>
+          </div>
+        </div>
+
+        <!-- Tài liệu của tôi -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">📄 Tài Liệu Của Tôi</h2>
+              <p class="card-subtitle">Danh sách tài liệu bạn đã upload</p>
+            </div>
+          </div>
+
+          <div id="myDocuments" class="document-list">
+            <p style="text-align:center; color: rgba(255,255,255,0.6); margin:0;">Đang tải...</p>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="notification" class="notification"></div>
+  <script src="js/profile.js"></script>
+</body>
+</html>

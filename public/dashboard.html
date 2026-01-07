@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Quản Lý Tài Liệu</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body class="dashboard">
+  <div class="app">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="brand" onclick="window.location.href='dashboard.html'" style="cursor:pointer;">
+        <div class="brand-icon">📚</div>
+        <div class="brand-text">
+          <div class="brand-name">DTDM.edu</div>
+          <div class="brand-sub">Quản lý & chia sẻ tài liệu</div>
+        </div>
+      </div>
+
+      <div class="menu">
+        <div class="menu-title">Menu</div>
+        <a class="menu-item active" href="dashboard.html">🏠 Dashboard</a>
+        <a class="menu-item" href="documents.html">📄 Tài liệu</a>
+        <a class="menu-item" href="profile.html">👤 Trang cá nhân</a>
+        <a class="menu-item" href="payment.html">⭐ Nâng cấp</a>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+      <!-- TOPBAR -->
+      <header class="topbar">
+        <div class="topbar-inner">
+          <div class="search" aria-label="Search (UI only)">
+            <span class="hint">🔎 Tìm kiếm (UI)</span>
+            <input placeholder="Nhập từ khóa..." />
+          </div>
+
+          <div class="topbar-right">
+            <div class="user-chip">
+              <span class="user-dot"></span>
+              <span id="userName">Xin chào!</span>
+            </div>
+            <button onclick="logout()" class="btn btn-secondary">Đăng Xuất</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- CONTENT -->
+      <main class="main-content">
+        <!-- Actions -->
+        <div class="grid-3" style="margin-bottom:14px;">
+          <button onclick="window.location.href='documents.html'" class="btn btn-secondary">
+            📄 Xem Tài Liệu
+          </button>
+          <button onclick="window.location.href='profile.html'" class="btn btn-warning">
+            👤 Trang Cá Nhân
+          </button>
+          <button onclick="window.location.href='payment.html'" class="btn btn-success">
+            ⭐ Nâng Cấp Gói
+          </button>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid-3" style="margin-bottom:16px;">
+          <div class="stat-box">
+            <h3 id="uploadedCount">0</h3>
+            <p>Tài liệu đã tải lên</p>
+          </div>
+          <div class="stat-box">
+            <h3 id="quotaRemaining">...</h3>
+            <p>Quota còn lại</p>
+          </div>
+          <div class="stat-box">
+            <h3 id="userPlan">Free</h3>
+            <p>Gói hiện tại</p>
+          </div>
+        </div>
+
+        <!-- Upload -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">📤 Upload Tài Liệu</h2>
+              <p class="card-subtitle">Tải lên PDF/DOC để lưu trữ & chia sẻ</p>
+            </div>
+          </div>
+
+          <form onsubmit="handleUpload(event)">
+            <div class="form-group">
+              <label for="docTitle">Tiêu đề</label>
+              <input type="text" id="docTitle" required>
+            </div>
+
+            <div class="form-group">
+              <label for="docDescription">Mô tả</label>
+              <textarea id="docDescription" rows="3"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>File (PDF hoặc DOC, tối đa 10MB)</label>
+              <div class="file-input-wrapper">
+                <input type="file" id="docFile" accept=".pdf,.doc,.docx" onchange="updateFileName()" required>
+                <label for="docFile" class="file-input-label">Nhấn để chọn file</label>
+              </div>
+              <div class="file-name" id="fileName"></div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Upload</button>
+          </form>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="notification" class="notification"></div>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

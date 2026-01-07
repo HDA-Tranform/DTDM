@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng Nhập / Đăng Ký - Quản Lý Tài Liệu</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+  <div class="auth-page">
+    <div class="auth-box">
+      <div class="auth-brand">
+        <div class="auth-badge">📚</div>
+        <h1 class="auth-title">DTDMEdu</h1>
+        <p class="auth-subtitle">Nền tảng quản lý và chia sẻ tài liệu</p>
+      </div>
+
+      <!-- Form Đăng Nhập -->
+      <div id="loginForm" class="form-container active">
+        <h2 style="margin:0 0 14px;">Đăng Nhập</h2>
+        <form onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label for="loginEmail">Email</label>
+            <input type="email" id="loginEmail" required>
+          </div>
+
+          <div class="form-group">
+            <label for="loginPassword">Mật khẩu</label>
+            <input type="password" id="loginPassword" required>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width:100%;">Đăng Nhập</button>
+        </form>
+
+        <p class="switch-form">
+          Chưa có tài khoản? <a href="#" onclick="switchForm('register')">Đăng ký ngay</a>
+        </p>
+      </div>
+
+      <!-- Form Đăng Ký -->
+      <div id="registerForm" class="form-container">
+        <h2 style="margin:0 0 14px;">Đăng Ký</h2>
+        <form onsubmit="handleRegister(event)">
+          <div class="form-group">
+            <label for="registerUsername">Tên người dùng</label>
+            <input type="text" id="registerUsername" required>
+          </div>
+
+          <div class="form-group">
+            <label for="registerEmail">Email</label>
+            <input type="email" id="registerEmail" required>
+          </div>
+
+          <div class="form-group">
+            <label for="registerPassword">Mật khẩu</label>
+            <input type="password" id="registerPassword" required>
+          </div>
+
+          <button type="submit" class="btn btn-primary" style="width:100%;">Đăng Ký</button>
+        </form>
+
+        <p class="switch-form">
+          Đã có tài khoản? <a href="#" onclick="switchForm('login')">Đăng nhập</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div id="notification" class="notification"></div>
+  <script src="js/auth.js"></script>
+</body>
+</html>
