@@ -46,13 +46,19 @@ function displayDocuments(documents) {
         const fileSize = (doc.size / 1024).toFixed(2); // KB
         const fileExtension = doc.original_name.split('.').pop().toUpperCase();
         
+        // Escape HTML và JavaScript để tránh lỗi với ký tự đặc biệt
+        const safeTitle = escapeHtml(doc.title);
+        const safeDescription = escapeHtml(doc.description || 'Không có mô tả');
+        const safeUsername = escapeHtml(doc.username);
+        const safeOriginalName = escapeHtml(doc.original_name);
+        
         return `
             <div class="document-item">
                 <div class="document-info">
-                    <h3>📄 ${doc.title}</h3>
-                    <p>${doc.description || 'Không có mô tả'}</p>
-                    <p style="font-size: 0.85em; color: #999; margin-top: 5px;">
-                        Người đăng: <strong>${doc.username}</strong> | 
+                    <h3 style="font-family: var(--font); word-break: break-word;">📄 ${safeTitle}</h3>
+                    <p style="font-family: var(--font); word-break: break-word;">${safeDescription}</p>
+                    <p style="font-size: 0.85em; color: #999; margin-top: 5px; font-family: var(--font);">
+                        Người đăng: <strong>${safeUsername}</strong> | 
                         Loại: <strong>${fileExtension}</strong> | 
                         Kích thước: <strong>${fileSize} KB</strong>
                     </p>
@@ -60,7 +66,7 @@ function displayDocuments(documents) {
                 <div class="document-meta">
                     <p>Ngày tải lên</p>
                     <p><strong>${uploadDate}</strong></p>
-                    <button onclick="downloadDocument(${doc.id}, '${doc.original_name}')" 
+                    <button onclick="downloadDocument(${doc.id}, \`${safeOriginalName.replace(/`/g, '\\`')}\`)" 
                             class="btn btn-primary" style="margin-top: 10px; padding: 8px 15px;">
                         Tải xuống
                     </button>
@@ -68,6 +74,18 @@ function displayDocuments(documents) {
             </div>
         `;
     }).join('');
+}
+
+// Escape HTML để tránh XSS và lỗi hiển thị
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
 }
 
 // Tải xuống tài liệu từ S3

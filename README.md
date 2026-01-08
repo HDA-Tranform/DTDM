@@ -17,9 +17,8 @@
 
 - **Frontend:** HTML, CSS, JavaScript
 - **Backend:** Node.js, Express
-- **Upload:** Multer
-- **Database:** JSON file (có thể nâng cấp lên MongoDB)
-
+- **Upload:** AWS 
+- **Database:** PostgreSQL
 ## Cài Đặt
 
 ### 1. Cài đặt Node.js dependencies
@@ -69,39 +68,86 @@ DTDM/
 
 ## Hướng Dẫn Sử Dụng
 
-### 1. Đăng Ký Tài Khoản
-- Mở http://localhost:3000
-- Chọn "Đăng ký ngay"
-- Điền thông tin: tên, email, mật khẩu
-- Tài khoản Free mặc định có quota 5 file
+### 1. 📝 Đăng Ký Tài Khoản
+1. Truy cập http://localhost:3000
+2. Click nút **"Đăng ký ngay"** ở góc phải
+3. Điền đầy đủ thông tin:
+   - Tên đầy đủ
+   - Email (dùng để đăng nhập)
+   - Mật khẩu (tối thiểu 6 ký tự)
+4. Click **"Đăng Ký"**
+5. Hệ thống tự động tạo tài khoản **Free** với:
+   - ✅ Quota: 5 file
+   - ✅ Dung lượng upload: 10MB/file
+   - ✅ Xem tài liệu không giới hạn
 
-### 2. Đăng Nhập
-- Nhập email và mật khẩu
-- Truy cập Dashboard
+### 2. 🔐 Đăng Nhập
+1. Nhập email và mật khẩu đã đăng ký
+2. Click **"Đăng Nhập"**
+3. Tự động chuyển đến Dashboard
 
-### 3. Upload Tài Liệu
-- Vào Dashboard
-- Điền tiêu đề, mô tả
-- Chọn file PDF hoặc DOC (max 10MB)
-- Click "Upload"
-- Hệ thống sẽ kiểm tra quota tự động
+### 3. 📤 Upload Tài Liệu
+1. Vào **Dashboard** (trang chủ sau khi đăng nhập)
+2. Điền thông tin tài liệu:
+   - **Tiêu đề**: Tên tài liệu (bắt buộc)
+   - **Mô tả**: Nội dung mô tả ngắn gọn
+3. Click **"Chọn File"** → Chọn file từ máy tính
+   - Định dạng hỗ trợ: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX
+   - Giới hạn: 10MB (Free) / 50MB (Premium)
+4. Click **"Upload Tài Liệu"**
+5. File sẽ được upload lên **AWS S3** và lưu metadata vào database
+6. Nhận thông báo thành công
 
-### 4. Xem Tài Liệu
-- Click "Xem Tất Cả Tài Liệu"
-- Xem danh sách tài liệu từ cộng đồng
-- Tải xuống file mong muốn
+**Lưu ý:**
+- Tài khoản Free chỉ upload được 5 file
+- Khi hết quota, cần nâng cấp Premium để tiếp tục
 
-### 5. Nâng Cấp Premium
-- Click "Nâng Cấp Premium"
-- Chọn phương thức thanh toán (MoMo/ZaloPay)
-- Xác nhận thanh toán 199.000đ
-- Nhận quyền upload không giới hạn
+### 4. 📄 Xem & Tải Tài Liệu
+1. Click menu **"Tài liệu"** hoặc nút **"Xem Tất Cả Tài Liệu"**
+2. Xem danh sách tài liệu từ cộng đồng:
+   - Tên tài liệu, mô tả
+   - Người đăng, ngày upload
+   - Loại file, kích thước
+3. Click **"Tải xuống"** để download file
+4. File được tải từ AWS S3 qua signed URL (bảo mật)
 
-### 6. Xem Profile
-- Click "Trang Cá Nhân"
-- Xem thông tin tài khoản
-- Kiểm tra quota sử dụng
-- Xem tài liệu đã upload
+### 5. ⭐ Nâng Cấp Premium
+1. Click menu **"Nâng cấp"** hoặc vào trang Payment
+2. Xem thông tin gói Premium:
+   - 💰 Giá: **199.000đ/tháng**
+   - ♾️ Upload không giới hạn
+   - 📦 Dung lượng file: tối đa 50MB
+   - 🔒 Lưu trữ vĩnh viễn trên AWS S3
+3. Chọn phương thức thanh toán:
+   - **MoMo**: Ví điện tử MoMo
+   - **ZaloPay**: Ví điện tử ZaloPay
+4. Click **"Thanh Toán Ngay"**
+5. Chuyển đến trang thanh toán của MoMo/ZaloPay
+6. Hoàn tất thanh toán trên app
+7. Hệ thống tự động:
+   - ✅ Cập nhật tài khoản lên Premium
+   - 📧 Gửi email xác nhận (qua AWS SES)
+   - 🔄 Chuyển về trang success
+8. Quay lại Dashboard để kiểm tra
+
+### 6. 👤 Xem Trang Cá Nhân
+1. Click menu **"Trang cá nhân"**
+2. Xem thông tin tài khoản:
+   - **Username & Email**
+   - **Gói hiện tại**: Free / Premium ⭐
+   - **Quota sử dụng**: X/5 (Free) hoặc ∞ (Premium)
+   - **Ngày tham gia**
+3. Xem danh sách tài liệu đã upload:
+   - Tên file, ngày upload
+   - Click **"Tải về"** để download lại
+   - Chỉ hiển thị tài liệu của bạn
+
+### 7. 🔄 Quản Lý Tài Liệu
+- **Dashboard**: Xem tổng quan và upload file mới
+- **Tài liệu**: Xem tất cả tài liệu công khai
+- **Profile**: Quản lý tài liệu cá nhân
+- File được lưu trữ an toàn trên AWS S3
+- Metadata được lưu trên AWS RDS PostgreSQL
 
 ## API Endpoints
 

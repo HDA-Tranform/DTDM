@@ -17,6 +17,9 @@ const { uploadToS3, deleteFromS3, getSignedUrl } = require('./services/uploadS3'
 const momoService = require('./services/momoService');
 const zalopayService = require('./services/zalopayService');
 
+// Import email service (AWS SES)
+const emailService = require('./services/emailService');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -87,6 +90,18 @@ app.post('/api/register', async (req, res) => {
         );
 
         const newUser = result.rows[0];
+        
+        // Gửi email welcome (không chặn response)
+        emailService.sendWelcomeEmail(email, username)
+            .then(emailResult => {
+                if (emailResult.success) {
+                    console.log('✅ Đã gửi email welcome tới:', email);
+                } else {
+                    console.log('⚠️  Không gửi được email:', emailResult.error);
+                }
+            })
+            .catch(err => console.error('Email error:', err));
+        
         res.json({ 
             success: true, 
             message: 'Đăng ký thành công!', 
@@ -476,6 +491,12 @@ app.post('/api/payment/momo-ipn', async (req, res) => {
         if (verifyResult.resultCode === 0) {
             const { userId } = verifyResult.extraData;
             
+            // Lấy thông tin user để gửi email
+            const userResult = await db.query(
+                'SELECT username, email FROM users WHERE id = $1',
+                [userId]
+            );
+            
             // Cập nhật user lên Premium
             await db.query(
                 `UPDATE users 
@@ -493,6 +514,18 @@ app.post('/api/payment/momo-ipn', async (req, res) => {
             );
 
             console.log(`User ${userId} upgraded to Premium via MoMo`);
+            
+            // Gửi email thông báo Premium (không chặn response)
+            if (userResult.rows.length > 0) {
+                const user = userResult.rows[0];
+                emailService.sendPremiumUpgradeEmail(user.email, user.username)
+                    .then(emailResult => {
+                        if (emailResult.success) {
+                            console.log('✅ Đã gửi email Premium tới:', user.email);
+                        }
+                    })
+                    .catch(err => console.error('Email error:', err));
+            }
         } else {
             // Cập nhật trạng thái failed
             await db.query(
@@ -622,6 +655,12 @@ app.post('/api/payment/zalopay-ipn', async (req, res) => {
         if (verifyResult.status === 1) {
             const { userId } = verifyResult.embedData;
             
+            // Lấy thông tin user để gửi email
+            const userResult = await db.query(
+                'SELECT username, email FROM users WHERE id = $1',
+                [userId]
+            );
+            
             // Cập nhật user lên Premium
             await db.query(
                 `UPDATE users 
@@ -639,6 +678,18 @@ app.post('/api/payment/zalopay-ipn', async (req, res) => {
             );
 
             console.log(`User ${userId} upgraded to Premium via ZaloPay`);
+            
+            // Gửi email thông báo Premium (không chặn response)
+            if (userResult.rows.length > 0) {
+                const user = userResult.rows[0];
+                emailService.sendPremiumUpgradeEmail(user.email, user.username)
+                    .then(emailResult => {
+                        if (emailResult.success) {
+                            console.log('✅ Đã gửi email Premium tới:', user.email);
+                        }
+                    })
+                    .catch(err => console.error('Email error:', err));
+            }
         }
 
         // Trả về cho ZaloPay biết đã nhận được IPN

@@ -4,12 +4,18 @@ const moment = require('moment');
 
 class ZaloPayService {
     constructor() {
-        this.appId = parseInt(process.env.ZALOPAY_APPID);
+        this.appId = parseInt(process.env.ZALOPAY_APPID) || 554;
         this.key1 = process.env.ZALOPAY_KEY1;
         this.key2 = process.env.ZALOPAY_KEY2;
-        this.endpoint = 'https://sb-openapi.zalopay.vn/v2/create';
+        this.endpoint = process.env.ZALOPAY_ENDPOINT || 'https://sb-openapi.zalopay.vn/v2/create';
         this.redirectUrl = process.env.ZALOPAY_REDIRECT_URL;
         this.ipnUrl = process.env.ZALOPAY_IPN_URL;
+        
+        console.log('ZaloPay Config:', {
+            appId: this.appId,
+            endpoint: this.endpoint,
+            redirectUrl: this.redirectUrl
+        });
     }
 
     /**
@@ -21,83 +27,71 @@ class ZaloPayService {
      */
     async createPayment(orderId, amount, description, embedData = {}) {
         try {
-            const appTransId = `${moment().format('YYMMDD')}_${orderId}`;
-            const appTime = Date.now();
+            const transID = Date.now();
+            const appTransId = `${moment().format('YYMMDD')}_${transID}`;
 
-            // Embed data
+            // Embed data cho redirect
             const embedDataObj = {
                 redirecturl: this.redirectUrl,
                 ...embedData
             };
-            const embedDataString = JSON.stringify(embedDataObj);
-            
-            // Items
-            const items = [{
-                itemid: "premium",
-                itemname: "Gói Premium",
-                itemprice: amount,
-                itemquantity: 1
-            }];
-            const itemString = JSON.stringify(items);
 
-            // Tạo data để tính MAC theo format ZaloPay v2
-            // Format: app_id|app_trans_id|app_user|amount|app_time|embed_data|item
-            const data = `${this.appId}|${appTransId}|${embedData.userId}|${amount}|${appTime}|${embedDataString}|${itemString}`;
+            // Tạo order theo format ZaloPay TPE (Third Party Ecommerce)
+            const order = {
+                app_id: this.appId,
+                app_user: String(embedData.userId || 'user'),
+                app_trans_id: appTransId,
+                app_time: Date.now(),
+                amount: amount,
+                item: JSON.stringify([{
+                    itemid: "premium",
+                    itemname: "Gói Premium DTDM",
+                    itemprice: amount,
+                    itemquantity: 1
+                }]),
+                embed_data: JSON.stringify(embedDataObj),
+                description: description,
+                bank_code: "zalopayapp"
+            };
+
+            // Tạo MAC theo format: app_id|app_trans_id|app_user|amount|app_time|embed_data|item
+            const data = `${order.app_id}|${order.app_trans_id}|${order.app_user}|${order.amount}|${order.app_time}|${order.embed_data}|${order.item}`;
             
-            const mac = crypto
+            order.mac = crypto
                 .createHmac('sha256', this.key1)
                 .update(data)
                 .digest('hex');
 
-            // Request body
-            const requestBody = {
-                app_id: this.appId,
-                app_trans_id: appTransId,
-                app_user: String(embedData.userId),
-                app_time: appTime,
-                amount: amount,
-                item: itemString,
-                embed_data: embedDataString,
-                description: description,
-                bank_code: "",
-                mac: mac
-            };
+            console.log('ZaloPay MAC Data:', data);
+            console.log('ZaloPay Request:', JSON.stringify(order, null, 2));
 
-            console.log('ZaloPay Data for MAC:', data);
-            console.log('ZaloPay Request Body:', JSON.stringify(requestBody, null, 2));
-
-            // Gọi API ZaloPay với form-urlencoded
-            const response = await axios.post(this.endpoint, requestBody, {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                transformRequest: [(data) => {
-                    return Object.keys(data)
-                        .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(data[key])}`)
-                        .join('&');
-                }]
+            // Gọi API ZaloPay
+            const response = await axios.post(this.endpoint, null, {
+                params: order
             });
 
             console.log('ZaloPay Response:', response.data);
 
-            if (response.data.return_code === 1) {
+            if (response.data.return_code === 1 || response.data.returncode === 1) {
                 return {
                     success: true,
-                    orderUrl: response.data.order_url,
-                    zpTransToken: response.data.zp_trans_token,
+                    orderUrl: response.data.order_url || response.data.orderurl,
+                    zpTransToken: response.data.zp_trans_token || response.data.zptranstoken,
                     appTransId: appTransId
                 };
             } else {
+                const returnCode = response.data.return_code || response.data.returncode;
+                const returnMsg = response.data.return_message || response.data.returnmessage || 'Không xác định';
                 return {
                     success: false,
-                    message: response.data.return_message || `Lỗi ZaloPay: ${response.data.return_code}`
+                    message: `Lỗi ZaloPay (${returnCode}): ${returnMsg}`
                 };
             }
         } catch (error) {
             console.error('ZaloPay Error:', error.response?.data || error.message);
             return {
                 success: false,
-                message: error.message
+                message: 'Lỗi kết nối ZaloPay: ' + (error.response?.data?.return_message || error.message)
             };
         }
     }

@@ -74,6 +74,7 @@ async function migrateToRDS() {
                 payment_method VARCHAR(50),
                 status VARCHAR(50) DEFAULT 'pending',
                 transaction_id VARCHAR(255),
+                extra_data TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )

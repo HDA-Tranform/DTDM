@@ -83,10 +83,6 @@ async function processPayment() {
     const paymentName = selectedPayment === 'momo' ? 'MoMo' : 'ZaloPay';
     const amount = 199000; // 199.000đ
     
-    if (!confirm(`Xác nhận thanh toán ${amount.toLocaleString('vi-VN')}đ qua ${paymentName}?`)) {
-        return;
-    }
-
     // Disable button để tránh click nhiều lần
     const paymentBtn = document.getElementById('paymentBtn');
     paymentBtn.disabled = true;

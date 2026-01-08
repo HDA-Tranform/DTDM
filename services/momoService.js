@@ -9,6 +9,12 @@ class MomoService {
         this.endpoint = process.env.MOMO_API_ENDPOINT;
         this.redirectUrl = process.env.MOMO_REDIRECT_URL;
         this.ipnUrl = process.env.MOMO_IPN_URL;
+        
+        console.log('MoMo Config:', {
+            partnerCode: this.partnerCode,
+            endpoint: this.endpoint,
+            redirectUrl: this.redirectUrl
+        });
     }
 
     /**

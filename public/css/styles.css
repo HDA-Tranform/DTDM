@@ -358,15 +358,21 @@ input:focus, textarea:focus{
   padding: 16px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
+  font-family: var(--font);
 }
 .document-info h3{
   margin: 0 0 8px;
   font-size: 1.02rem;
+  font-family: var(--font);
+  word-break: break-word;
+  line-height: 1.4;
 }
 .document-info p{
   margin: 0;
   color: var(--muted);
   line-height: 1.45;
+  font-family: var(--font);
+  word-break: break-word;
 }
 .document-meta{
   min-width: 170px;
