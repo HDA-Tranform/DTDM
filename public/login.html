@@ -1,73 +1,244 @@
 <!DOCTYPE html>
 <html lang="vi">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Đăng Nhập / Đăng Ký - Quản Lý Tài Liệu</title>
-  <link rel="stylesheet" href="css/styles.css">
-</head>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#667eea" />
+    <meta name="description" content="DTDM - Đăng nhập và đăng ký tài khoản" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="/image/icon-192.png" />
+    <title>Đăng Nhập / Đăng Ký - Quản Lý Tài Liệu</title>
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
 
-<body>
-  <div class="auth-page">
-    <div class="auth-box">
-      <div class="auth-brand">
-        <div class="auth-badge">📚</div>
-        <h1 class="auth-title">DTDMEdu</h1>
-        <p class="auth-subtitle">Nền tảng quản lý và chia sẻ tài liệu</p>
-      </div>
+  <body>
+    <!-- Theme Toggle Button -->
+    <button
+      id="themeToggle"
+      class="theme-toggle"
+      onclick="toggleTheme()"
+      title="Đổi theme (T)"
+    >
+      🌙
+    </button>
 
-      <!-- Form Đăng Nhập -->
-      <div id="loginForm" class="form-container active">
-        <h2 style="margin:0 0 14px;">Đăng Nhập</h2>
-        <form onsubmit="handleLogin(event)">
-          <div class="form-group">
-            <label for="loginEmail">Email</label>
-            <input type="email" id="loginEmail" required>
-          </div>
+    <div class="auth-page">
+      <div class="auth-box">
+        <div class="auth-brand">
+          <div class="auth-badge">📚</div>
+          <h1 class="auth-title">DTDMEdu</h1>
+          <p class="auth-subtitle">Nền tảng quản lý và chia sẻ tài liệu</p>
+        </div>
 
-          <div class="form-group">
-            <label for="loginPassword">Mật khẩu</label>
-            <input type="password" id="loginPassword" required>
-          </div>
+        <!-- Form Đăng Nhập -->
+        <div id="loginForm" class="form-container active">
+          <h2 style="margin: 0 0 14px">Đăng Nhập</h2>
+          <form onsubmit="handleLogin(event)">
+            <div class="form-group">
+              <label for="loginEmail">Email</label>
+              <input type="email" id="loginEmail" required />
+            </div>
 
-          <button type="submit" class="btn btn-primary" style="width:100%;">Đăng Nhập</button>
-        </form>
+            <div class="form-group">
+              <label for="loginPassword">Mật khẩu</label>
+              <div class="password-wrapper">
+                <input type="password" id="loginPassword" required />
+                <button
+                  type="button"
+                  class="password-toggle"
+                  onclick="togglePassword('loginPassword', this)"
+                >
+                  👁️
+                </button>
+              </div>
+            </div>
 
-        <p class="switch-form">
-          Chưa có tài khoản? <a href="#" onclick="switchForm('register')">Đăng ký ngay</a>
-        </p>
-      </div>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              id="loginBtn"
+              style="width: 100%"
+            >
+              Đăng Nhập
+            </button>
+          </form>
 
-      <!-- Form Đăng Ký -->
-      <div id="registerForm" class="form-container">
-        <h2 style="margin:0 0 14px;">Đăng Ký</h2>
-        <form onsubmit="handleRegister(event)">
-          <div class="form-group">
-            <label for="registerUsername">Tên người dùng</label>
-            <input type="text" id="registerUsername" required>
-          </div>
+          <p style="text-align: center; margin: 10px 0">
+            <a
+              href="#"
+              onclick="showForgotPassword()"
+              style="color: #667eea; font-size: 0.9rem"
+              >Quên mật khẩu?</a
+            >
+          </p>
 
-          <div class="form-group">
-            <label for="registerEmail">Email</label>
-            <input type="email" id="registerEmail" required>
-          </div>
+          <p class="switch-form">
+            Chưa có tài khoản?
+            <a href="#" onclick="switchForm('register')">Đăng ký ngay</a>
+          </p>
+        </div>
 
-          <div class="form-group">
-            <label for="registerPassword">Mật khẩu</label>
-            <input type="password" id="registerPassword" required>
-          </div>
+        <!-- Form Đăng Ký -->
+        <div id="registerForm" class="form-container">
+          <h2 style="margin: 0 0 14px">Đăng Ký</h2>
+          <form onsubmit="handleRegister(event)">
+            <div class="form-group">
+              <label for="registerUsername">Tên người dùng</label>
+              <input type="text" id="registerUsername" required minlength="2" />
+            </div>
 
-          <button type="submit" class="btn btn-primary" style="width:100%;">Đăng Ký</button>
-        </form>
+            <div class="form-group">
+              <label for="registerEmail">Email</label>
+              <input type="email" id="registerEmail" required />
+            </div>
 
-        <p class="switch-form">
-          Đã có tài khoản? <a href="#" onclick="switchForm('login')">Đăng nhập</a>
-        </p>
+            <div class="form-group">
+              <label for="registerPassword">Mật khẩu</label>
+              <div class="password-wrapper">
+                <input
+                  type="password"
+                  id="registerPassword"
+                  required
+                  minlength="6"
+                  placeholder="Tối thiểu 6 ký tự"
+                />
+                <button
+                  type="button"
+                  class="password-toggle"
+                  onclick="togglePassword('registerPassword', this)"
+                >
+                  👁️
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="confirmPassword">Xác nhận mật khẩu</label>
+              <div class="password-wrapper">
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  required
+                  minlength="6"
+                />
+                <button
+                  type="button"
+                  class="password-toggle"
+                  onclick="togglePassword('confirmPassword', this)"
+                >
+                  👁️
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              class="btn btn-primary"
+              id="registerBtn"
+              style="width: 100%"
+            >
+              Đăng Ký
+            </button>
+          </form>
+
+          <p class="switch-form">
+            Đã có tài khoản?
+            <a href="#" onclick="switchForm('login')">Đăng nhập</a>
+          </p>
+        </div>
+
+        <!-- Form Quên Mật Khẩu -->
+        <div id="forgotForm" class="form-container">
+          <h2 style="margin: 0 0 14px">Quên Mật Khẩu</h2>
+          <p
+            style="
+              color: rgba(255, 255, 255, 0.7);
+              margin-bottom: 15px;
+              font-size: 0.9rem;
+            "
+          >
+            Nhập email đã đăng ký, chúng tôi sẽ gửi link đặt lại mật khẩu.
+          </p>
+          <form onsubmit="handleForgotPassword(event)">
+            <div class="form-group">
+              <label for="forgotEmail">Email</label>
+              <input type="email" id="forgotEmail" required />
+            </div>
+
+            <button
+              type="submit"
+              class="btn btn-primary"
+              style="width: 100%"
+              id="forgotBtn"
+            >
+              📧 Gửi Link Reset
+            </button>
+          </form>
+
+          <p class="switch-form">
+            <a href="#" onclick="switchForm('login')">← Quay về đăng nhập</a>
+          </p>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div id="notification" class="notification"></div>
-  <script src="js/auth.js"></script>
-</body>
+    <div id="notification" class="notification"></div>
+    <script src="js/auth.js"></script>
+    <script>
+      // Hiển thị form quên mật khẩu
+      function showForgotPassword() {
+        document.getElementById("loginForm").classList.remove("active");
+        document.getElementById("registerForm").classList.remove("active");
+        document.getElementById("forgotForm").classList.add("active");
+      }
+
+      // Cập nhật switchForm để hỗ trợ forgot
+      const originalSwitchForm = window.switchForm;
+      window.switchForm = function (form) {
+        document.getElementById("forgotForm").classList.remove("active");
+        if (form === "login") {
+          document.getElementById("loginForm").classList.add("active");
+          document.getElementById("registerForm").classList.remove("active");
+        } else {
+          document.getElementById("loginForm").classList.remove("active");
+          document.getElementById("registerForm").classList.add("active");
+        }
+      };
+
+      // Xử lý quên mật khẩu
+      async function handleForgotPassword(e) {
+        e.preventDefault();
+        const email = document.getElementById("forgotEmail").value;
+        const btn = document.getElementById("forgotBtn");
+
+        btn.disabled = true;
+        btn.textContent = "⏳ Đang gửi...";
+
+        try {
+          const response = await fetch(`${API_URL}/forgot-password`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email }),
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            showNotification(
+              "Đã gửi email! Vui lòng kiểm tra hộp thư.",
+              "success"
+            );
+            setTimeout(() => switchForm("login"), 2000);
+          } else {
+            showNotification(data.message, "error");
+          }
+        } catch (error) {
+          showNotification("Lỗi kết nối server!", "error");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "📧 Gửi Link Reset";
+        }
+      }
+    </script>
+  </body>
 </html>

@@ -1,17 +1,27 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#3b82f6" />
+  <meta name="description" content="DTDM - Hệ thống quản lý và chia sẻ tài liệu trực tuyến" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="/image/icon-192.png" />
   <title>Dashboard - Quản Lý Tài Liệu</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css" />
 </head>
 
 <body class="dashboard">
+  <!-- Offline Indicator -->
+  <div id="offlineIndicator" class="offline-indicator">
+    📴 Bạn đang offline - Một số tính năng có thể không hoạt động
+  </div>
+
   <div class="app">
     <!-- SIDEBAR -->
     <aside class="sidebar">
-      <div class="brand" onclick="window.location.href='dashboard.html'" style="cursor:pointer;">
+      <div class="brand" onclick="window.location.href='dashboard.html'" style="cursor: pointer">
         <div class="brand-icon">📚</div>
         <div class="brand-text">
           <div class="brand-name">DTDM.edu</div>
@@ -33,17 +43,21 @@
       <!-- TOPBAR -->
       <header class="topbar">
         <div class="topbar-inner">
-          <div class="search" aria-label="Search (UI only)">
-            <span class="hint">🔎 Tìm kiếm (UI)</span>
-            <input placeholder="Nhập từ khóa..." />
+          <button id="sidebarToggle" class="btn-icon" onclick="toggleSidebar()">☰</button>
+          <div class="search" aria-label="Search">
+            <span class="hint">🔎 Tìm kiếm</span>
+            <input id="searchInput" placeholder="Nhập từ khóa..." onkeyup="handleSearch(event)" />
           </div>
 
           <div class="topbar-right">
             <div class="user-chip">
-              <span class="user-dot"></span>
+              <img id="headerAvatar" src="" alt="Avatar" class="header-avatar" style="display: none;">
+              <span class="user-dot" id="headerUserDot"></span>
               <span id="userName">Xin chào!</span>
             </div>
-            <button onclick="logout()" class="btn btn-secondary">Đăng Xuất</button>
+            <button onclick="logout()" class="btn btn-secondary">
+              Đăng Xuất
+            </button>
           </div>
         </div>
       </header>
@@ -51,7 +65,7 @@
       <!-- CONTENT -->
       <main class="main-content">
         <!-- Actions -->
-        <div class="grid-3" style="margin-bottom:14px;">
+        <div class="grid-3" style="margin-bottom: 14px">
           <button onclick="window.location.href='documents.html'" class="btn btn-secondary">
             📄 Xem Tài Liệu
           </button>
@@ -64,7 +78,7 @@
         </div>
 
         <!-- Stats -->
-        <div class="grid-3" style="margin-bottom:16px;">
+        <div class="grid-3" style="margin-bottom: 16px">
           <div class="stat-box">
             <h3 id="uploadedCount">0</h3>
             <p>Tài liệu đã tải lên</p>
@@ -84,14 +98,16 @@
           <div class="card-header">
             <div>
               <h2 class="card-title">📤 Upload Tài Liệu</h2>
-              <p class="card-subtitle">Tải lên PDF/DOC để lưu trữ & chia sẻ</p>
+              <p class="card-subtitle">
+                Tải lên PDF/DOC để lưu trữ & chia sẻ
+              </p>
             </div>
           </div>
 
           <form onsubmit="handleUpload(event)">
             <div class="form-group">
               <label for="docTitle">Tiêu đề</label>
-              <input type="text" id="docTitle" required>
+              <input type="text" id="docTitle" required />
             </div>
 
             <div class="form-group">
@@ -100,22 +116,120 @@
             </div>
 
             <div class="form-group">
+              <label for="docCategory">Danh mục</label>
+              <select id="docCategory" class="category-select">
+                <option value="">📁 Chọn danh mục...</option>
+              </select>
+            </div>
+
+            <div class="form-group">
               <label>File (PDF hoặc DOC, tối đa 10MB)</label>
-              <div class="file-input-wrapper">
-                <input type="file" id="docFile" accept=".pdf,.doc,.docx" onchange="updateFileName()" required>
-                <label for="docFile" class="file-input-label">Nhấn để chọn file</label>
+              <!-- Drag & Drop Zone -->
+              <div class="drop-zone" id="dropZone" onclick="document.getElementById('docFile').click()">
+                <div class="drop-zone-icon">📁</div>
+                <p class="drop-zone-text">
+                  Kéo thả file vào đây hoặc <strong>nhấn để chọn</strong>
+                </p>
+                <p class="drop-zone-hint">
+                  Hỗ trợ: PDF, DOC, DOCX (tối đa 10MB)
+                </p>
               </div>
+              <input type="file" id="docFile" accept=".pdf,.doc,.docx" onchange="updateFileName()" style="display: none"
+                required />
               <div class="file-name" id="fileName"></div>
             </div>
 
-            <button type="submit" class="btn btn-primary">Upload</button>
+            <button type="submit" class="btn btn-primary" id="uploadBtn">
+              Upload
+            </button>
           </form>
         </div>
       </main>
     </div>
   </div>
 
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Theme Toggle Button -->
+  <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" title="Đổi giao diện (T)">
+    🌙
+  </button>
+
+  <!-- Keyboard Shortcuts Modal -->
+  <div id="shortcutsModal" class="shortcuts-modal" onclick="closeShortcutsModal(event)">
+    <div class="shortcuts-content" onclick="event.stopPropagation()">
+      <h3>⌨️ Phím tắt</h3>
+      <div class="shortcut-item">
+        <span>Tìm kiếm</span>
+        <div class="shortcut-keys"><span class="shortcut-key">/</span></div>
+      </div>
+      <div class="shortcut-item">
+        <span>Dashboard</span>
+        <div class="shortcut-keys">
+          <span class="shortcut-key">G</span>
+          <span class="shortcut-key">D</span>
+        </div>
+      </div>
+      <div class="shortcut-item">
+        <span>Tài liệu</span>
+        <div class="shortcut-keys">
+          <span class="shortcut-key">G</span>
+          <span class="shortcut-key">T</span>
+        </div>
+      </div>
+      <div class="shortcut-item">
+        <span>Trang cá nhân</span>
+        <div class="shortcut-keys">
+          <span class="shortcut-key">G</span>
+          <span class="shortcut-key">P</span>
+        </div>
+      </div>
+      <div class="shortcut-item">
+        <span>Nâng cấp Premium</span>
+        <div class="shortcut-keys">
+          <span class="shortcut-key">G</span>
+          <span class="shortcut-key">U</span>
+        </div>
+      </div>
+      <div class="shortcut-item">
+        <span>Đổi theme</span>
+        <div class="shortcut-keys"><span class="shortcut-key">T</span></div>
+      </div>
+      <div class="shortcut-item">
+        <span>Đăng xuất</span>
+        <div class="shortcut-keys"><span class="shortcut-key">L</span></div>
+      </div>
+      <div class="shortcut-item">
+        <span>Hiển thị phím tắt</span>
+        <div class="shortcut-keys"><span class="shortcut-key">?</span></div>
+      </div>
+      <div class="shortcut-item">
+        <span>Đóng modal</span>
+        <div class="shortcut-keys"><span class="shortcut-key">Esc</span></div>
+      </div>
+      <button class="btn btn-secondary" style="width: 100%; margin-top: 20px" onclick="closeShortcutsModal()">
+        Đóng
+      </button>
+    </div>
+  </div>
+
+  <!-- PWA Install Prompt -->
+  <div id="pwaInstallPrompt" class="pwa-install-prompt">
+    <h4>📲 Cài đặt ứng dụng</h4>
+    <p>Thêm DTDM vào màn hình chính để truy cập nhanh hơn!</p>
+    <div class="pwa-install-buttons">
+      <button class="btn btn-secondary" onclick="dismissPwaPrompt()">
+        Để sau
+      </button>
+      <button class="btn btn-primary" onclick="installPwa()">Cài đặt</button>
+    </div>
+  </div>
+
   <div id="notification" class="notification"></div>
   <script src="js/dashboard.js"></script>
 </body>
+
 </html>

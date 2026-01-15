@@ -1,17 +1,32 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#667eea" />
+  <meta name="description" content="DTDM - Trang cá nhân và quản lý thông tin" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="/image/icon-192.png" />
   <title>Trang Cá Nhân</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css" />
 </head>
 
 <body class="dashboard">
+  <!-- Offline Indicator -->
+  <div id="offlineIndicator" class="offline-indicator">
+    📴 Bạn đang offline - Một số tính năng có thể không hoạt động
+  </div>
+
+  <!-- Theme Toggle Button -->
+  <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" title="Đổi theme (T)">
+    🌙
+  </button>
+
   <div class="app">
     <!-- SIDEBAR -->
     <aside class="sidebar">
-      <div class="brand" onclick="window.location.href='dashboard.html'" style="cursor:pointer;">
+      <div class="brand" onclick="window.location.href='dashboard.html'" style="cursor: pointer">
         <div class="brand-icon">📚</div>
         <div class="brand-text">
           <div class="brand-name">DTDMEdu</div>
@@ -32,24 +47,85 @@
     <div class="main">
       <header class="topbar">
         <div class="topbar-inner">
+          <button id="sidebarToggle" class="btn-icon" onclick="toggleSidebar()">☰</button>
           <div class="search">
-            <span class="hint">🔎 Tìm kiếm (UI)</span>
-            <input placeholder="Nhập từ khóa..." />
+            <span class="hint">🔎 Tìm kiếm</span>
+            <input id="searchInput" placeholder="Nhập từ khóa..." onkeyup="handleSearch(event)" />
           </div>
 
           <div class="topbar-right">
             <div class="user-chip">
-              <span class="user-dot"></span>
+              <img id="headerAvatar" src="" alt="Avatar" class="header-avatar" style="display: none;">
+              <span class="user-dot" id="headerUserDot"></span>
               <span id="userName">Xin chào!</span>
             </div>
-            <button onclick="window.location.href='dashboard.html'" class="btn btn-secondary">
-              Quay lại Dashboard
+            <button onclick="logout()" class="btn btn-secondary">
+              Đăng Xuất
             </button>
           </div>
         </div>
       </header>
 
       <main class="main-content">
+        <!-- Avatar Section -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">🖼️ Ảnh Đại Diện</h2>
+              <p class="card-subtitle">Cập nhật avatar của bạn</p>
+            </div>
+          </div>
+
+          <div style="
+                display: flex;
+                align-items: center;
+                gap: 24px;
+                flex-wrap: wrap;
+              ">
+            <div id="avatarPreview" style="
+                  width: 120px;
+                  height: 120px;
+                  border-radius: 50%;
+                  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 3rem;
+                  color: white;
+                  overflow: hidden;
+                  border: 3px solid rgba(255, 255, 255, 0.2);
+                ">
+              <span id="avatarInitial">?</span>
+              <img id="avatarImage" src="" style="
+                    display: none;
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                  " />
+            </div>
+
+            <div style="flex: 1; min-width: 200px">
+              <input type="file" id="avatarInput" accept="image/*" style="display: none"
+                onchange="previewAvatar(this)" />
+              <button onclick="document.getElementById('avatarInput').click()" class="btn btn-secondary"
+                style="margin-bottom: 10px">
+                📷 Chọn ảnh mới
+              </button>
+              <p style="
+                    color: rgba(255, 255, 255, 0.5);
+                    font-size: 0.85rem;
+                    margin: 0;
+                  ">
+                Hỗ trợ: JPG, PNG, GIF. Tối đa 2MB.
+              </p>
+              <button id="uploadAvatarBtn" onclick="uploadAvatar()" class="btn btn-primary"
+                style="margin-top: 10px; display: none">
+                ✅ Lưu Avatar
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Thông tin cá nhân -->
         <div class="card">
           <div class="card-header">
@@ -61,18 +137,42 @@
 
           <div class="grid-3">
             <div class="stat-box">
-              <p style="margin:0; color: rgba(255,255,255,0.62); font-size:0.85rem; text-transform:uppercase; letter-spacing:0.08em;">👤 Tên người dùng</p>
-              <h3 style="margin-top:10px;" id="profileUsername">...</h3>
+              <p style="
+                    margin: 0;
+                    color: rgba(255, 255, 255, 0.62);
+                    font-size: 0.85rem;
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                  ">
+                👤 Tên người dùng
+              </p>
+              <h3 style="margin-top: 10px" id="profileUsername">...</h3>
             </div>
 
             <div class="stat-box">
-              <p style="margin:0; color: rgba(255,255,255,0.62); font-size:0.85rem; text-transform:uppercase; letter-spacing:0.08em;">✉️ Email</p>
-              <h3 style="margin-top:10px;" id="profileEmail">...</h3>
+              <p style="
+                    margin: 0;
+                    color: rgba(255, 255, 255, 0.62);
+                    font-size: 0.85rem;
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                  ">
+                ✉️ Email
+              </p>
+              <h3 style="margin-top: 10px" id="profileEmail">...</h3>
             </div>
 
             <div class="stat-box">
-              <p style="margin:0; color: rgba(255,255,255,0.62); font-size:0.85rem; text-transform:uppercase; letter-spacing:0.08em;">📅 Ngày đăng ký</p>
-              <h3 style="margin-top:10px;" id="profileCreatedAt">...</h3>
+              <p style="
+                    margin: 0;
+                    color: rgba(255, 255, 255, 0.62);
+                    font-size: 0.85rem;
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                  ">
+                📅 Ngày đăng ký
+              </p>
+              <h3 style="margin-top: 10px" id="profileCreatedAt">...</h3>
             </div>
           </div>
         </div>
@@ -86,42 +186,114 @@
             </div>
           </div>
 
-          <div style="padding: 18px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.12);
-                      background: radial-gradient(600px 240px at 20% 10%, rgba(59,130,246,0.25), transparent 60%),
-                                  radial-gradient(520px 220px at 80% 40%, rgba(34,197,94,0.18), transparent 60%),
-                                  rgba(255,255,255,0.05);">
-            <p style="margin:0; color: rgba(255,255,255,0.70); text-transform:uppercase; letter-spacing:0.10em; font-size:0.82rem;">
+          <div style="
+                padding: 18px;
+                border-radius: 18px;
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                background: radial-gradient(
+                    600px 240px at 20% 10%,
+                    rgba(59, 130, 246, 0.25),
+                    transparent 60%
+                  ),
+                  radial-gradient(
+                    520px 220px at 80% 40%,
+                    rgba(34, 197, 94, 0.18),
+                    transparent 60%
+                  ),
+                  rgba(255, 255, 255, 0.05);
+              ">
+            <p style="
+                  margin: 0;
+                  color: rgba(255, 255, 255, 0.7);
+                  text-transform: uppercase;
+                  letter-spacing: 0.1em;
+                  font-size: 0.82rem;
+                ">
               Gói hiện tại
             </p>
-            <h3 id="profilePlan" style="margin: 10px 0 6px; font-size: 2.2rem;">...</h3>
-            <p id="planDescription" style="margin:0; color: rgba(255,255,255,0.70);">...</p>
+            <h3 id="profilePlan" style="margin: 10px 0 6px; font-size: 2.2rem">
+              ...
+            </h3>
+            <p id="planDescription" style="margin: 0; color: rgba(255, 255, 255, 0.7)">
+              ...
+            </p>
           </div>
 
-          <div style="margin-top: 14px;">
+          <div style="margin-top: 14px">
             <div class="grid-3">
               <div class="stat-box">
-                <p style="margin:0; color: rgba(255,255,255,0.62); font-size:0.85rem; text-transform:uppercase; letter-spacing:0.08em;">✅ Đã upload</p>
-                <h3 style="margin-top:10px;" id="profileUploaded">0</h3>
+                <p style="
+                      margin: 0;
+                      color: rgba(255, 255, 255, 0.62);
+                      font-size: 0.85rem;
+                      text-transform: uppercase;
+                      letter-spacing: 0.08em;
+                    ">
+                  ✅ Đã upload
+                </p>
+                <h3 style="margin-top: 10px" id="profileUploaded">0</h3>
               </div>
 
-              <div class="stat-box" style="display:flex; align-items:center; justify-content:center;">
-                <div style="color: rgba(255,255,255,0.45); font-weight:900; font-size:2rem;">/</div>
+              <div class="stat-box" style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                  ">
+                <div style="
+                      color: rgba(255, 255, 255, 0.45);
+                      font-weight: 900;
+                      font-size: 2rem;
+                    ">
+                  /
+                </div>
               </div>
 
               <div class="stat-box">
-                <p style="margin:0; color: rgba(255,255,255,0.62); font-size:0.85rem; text-transform:uppercase; letter-spacing:0.08em;">🎯 Quota</p>
-                <h3 style="margin-top:10px;" id="profileQuota">0</h3>
+                <p style="
+                      margin: 0;
+                      color: rgba(255, 255, 255, 0.62);
+                      font-size: 0.85rem;
+                      text-transform: uppercase;
+                      letter-spacing: 0.08em;
+                    ">
+                  🎯 Quota
+                </p>
+                <h3 style="margin-top: 10px" id="profileQuota">0</h3>
               </div>
             </div>
 
-            <div style="margin-top: 12px; background: rgba(255,255,255,0.08); border-radius: 999px; height: 12px; overflow:hidden; border:1px solid rgba(255,255,255,0.10);">
-              <div id="quotaProgress" style="background: linear-gradient(90deg, rgba(59,130,246,1), rgba(96,165,250,1)); height: 100%; width: 0%; transition: width 0.5s ease;"></div>
+            <div style="
+                  margin-top: 12px;
+                  background: rgba(255, 255, 255, 0.08);
+                  border-radius: 999px;
+                  height: 12px;
+                  overflow: hidden;
+                  border: 1px solid rgba(255, 255, 255, 0.1);
+                ">
+              <div id="quotaProgress" style="
+                    background: linear-gradient(
+                      90deg,
+                      rgba(59, 130, 246, 1),
+                      rgba(96, 165, 250, 1)
+                    );
+                    height: 100%;
+                    width: 0%;
+                    transition: width 0.5s ease;
+                  "></div>
             </div>
 
-            <button onclick="window.location.href='payment.html'" class="btn btn-warning" id="upgradeBtn" style="margin-top: 14px; width: 100%; padding: 14px; font-size: 1.05rem;">
+            <button onclick="window.location.href='payment.html'" class="btn btn-warning" id="upgradeBtn" style="
+                  margin-top: 14px;
+                  width: 100%;
+                  padding: 14px;
+                  font-size: 1.05rem;
+                ">
               ⭐ Nâng Cấp Premium Ngay
             </button>
           </div>
+
+          <!-- User Stats -->
+          <div id="userStatsContainer" style="margin-top: 14px"></div>
         </div>
 
         <!-- Tài liệu của tôi -->
@@ -134,14 +306,88 @@
           </div>
 
           <div id="myDocuments" class="document-list">
-            <p style="text-align:center; color: rgba(255,255,255,0.6); margin:0;">Đang tải...</p>
+            <p style="
+                  text-align: center;
+                  color: rgba(255, 255, 255, 0.6);
+                  margin: 0;
+                ">
+              Đang tải...
+            </p>
           </div>
         </div>
       </main>
     </div>
   </div>
 
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Keyboard Shortcuts Modal -->
+  <div id="shortcutsModal" class="shortcuts-modal" onclick="closeShortcutsModal(event)">
+    <div class="shortcuts-content" onclick="event.stopPropagation()">
+      <h3>⌨️ Phím tắt</h3>
+      <div class="shortcut-item">
+        <span>Tìm kiếm</span>
+        <div class="shortcut-keys"><span class="shortcut-key">/</span></div>
+      </div>
+      <div class="shortcut-item">
+        <span>Dashboard</span>
+        <div class="shortcut-keys">
+          <span class="shortcut-key">G</span>
+          <span class="shortcut-key">D</span>
+        </div>
+      </div>
+      <div class="shortcut-item">
+        <span>Tài liệu</span>
+        <div class="shortcut-keys">
+          <span class="shortcut-key">G</span>
+          <span class="shortcut-key">T</span>
+        </div>
+      </div>
+      <div class="shortcut-item">
+        <span>Trang cá nhân</span>
+        <div class="shortcut-keys">
+          <span class="shortcut-key">G</span>
+          <span class="shortcut-key">P</span>
+        </div>
+      </div>
+      <div class="shortcut-item">
+        <span>Nâng cấp Premium</span>
+        <div class="shortcut-keys">
+          <span class="shortcut-key">G</span>
+          <span class="shortcut-key">U</span>
+        </div>
+      </div>
+      <div class="shortcut-item">
+        <span>Đổi theme</span>
+        <div class="shortcut-keys"><span class="shortcut-key">T</span></div>
+      </div>
+      <div class="shortcut-item">
+        <span>Đổi avatar</span>
+        <div class="shortcut-keys"><span class="shortcut-key">E</span></div>
+      </div>
+      <div class="shortcut-item">
+        <span>Đăng xuất</span>
+        <div class="shortcut-keys"><span class="shortcut-key">L</span></div>
+      </div>
+      <div class="shortcut-item">
+        <span>Hiển thị phím tắt</span>
+        <div class="shortcut-keys"><span class="shortcut-key">?</span></div>
+      </div>
+      <div class="shortcut-item">
+        <span>Đóng modal</span>
+        <div class="shortcut-keys"><span class="shortcut-key">Esc</span></div>
+      </div>
+      <button class="btn btn-secondary" style="width: 100%; margin-top: 20px" onclick="closeShortcutsModal()">
+        Đóng
+      </button>
+    </div>
+  </div>
+
   <div id="notification" class="notification"></div>
   <script src="js/profile.js"></script>
 </body>
+
 </html>

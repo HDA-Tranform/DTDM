@@ -31,7 +31,7 @@ const uploadToS3 = async (fileBuffer, fileName, mimetype) => {
 
   try {
     const result = await s3.upload(params).promise();
-    
+
     return {
       success: true,
       s3Key: result.Key,
@@ -86,5 +86,4 @@ module.exports = {
   uploadToS3,
   deleteFromS3,
   getSignedUrl,
-  s3
 };

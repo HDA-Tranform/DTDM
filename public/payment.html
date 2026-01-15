@@ -1,13 +1,28 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#667eea" />
+  <meta name="description" content="DTDM - Nâng cấp tài khoản Premium" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="/image/icon-192.png" />
   <title>Nâng Cấp Premium</title>
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 
 <body class="dashboard">
+  <!-- Offline Indicator -->
+  <div id="offlineIndicator" class="offline-indicator">
+    📴 Bạn đang offline - Một số tính năng có thể không hoạt động
+  </div>
+
+  <!-- Theme Toggle Button -->
+  <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" title="Đổi theme (T)">
+    🌙
+  </button>
+
   <div class="app">
     <!-- SIDEBAR -->
     <aside class="sidebar">
@@ -32,18 +47,20 @@
     <div class="main">
       <header class="topbar">
         <div class="topbar-inner">
+          <button id="sidebarToggle" class="btn-icon" onclick="toggleSidebar()">☰</button>
           <div class="search">
-            <span class="hint">🔎 Tìm kiếm (UI)</span>
-            <input placeholder="Nhập từ khóa..." />
+            <span class="hint">🔎 Tìm kiếm</span>
+            <input id="searchInput" placeholder="Nhập từ khóa..." onkeyup="handleSearch(event)" />
           </div>
 
           <div class="topbar-right">
             <div class="user-chip">
-              <span class="user-dot"></span>
+              <img id="headerAvatar" src="" alt="Avatar" class="header-avatar" style="display: none;">
+              <span class="user-dot" id="headerUserDot"></span>
               <span id="userName">Xin chào!</span>
             </div>
-            <button onclick="window.location.href='dashboard.html'" class="btn btn-secondary">
-              Quay lại Dashboard
+            <button onclick="logout()" class="btn btn-secondary">
+              Đăng Xuất
             </button>
           </div>
         </div>
@@ -91,7 +108,8 @@
           <div class="payment-options">
             <!-- MOMO -->
             <div class="payment-option" id="momo-option" onclick="selectPayment('momo')">
-              <div style="width:84px;height:84px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:22px;">
+              <div
+                style="width:84px;height:84px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:22px;">
                 <img src="/image/logomomo.png" alt="MoMo" style="width:100%;height:100%;object-fit:contain;" />
               </div>
               <h3>MoMo</h3>
@@ -100,23 +118,85 @@
 
             <!-- ZALOPAY -->
             <div class="payment-option" id="zalopay-option" onclick="selectPayment('zalopay')">
-              <div style="width:84px;height:84px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:22px;">
+              <div
+                style="width:84px;height:84px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:22px;">
                 <img src="/image/logozalopay.png" alt="ZaloPay" style="width:100%;height:100%;object-fit:contain;" />
               </div>
               <h3>ZaloPay</h3>
               <p>Ví điện tử ZaloPay</p>
             </div>
-              <h3>ZaloPay</h3>
-              <p>Ví điện tử ZaloPay</p>
-            </div>
           </div>
-
-          <!-- LOGIC GIỮ NGUYÊN -->
-          <button id="paymentBtn" class="btn btn-success" disabled onclick="processPayment()">
-            💰 Thanh Toán 199.000đ
-          </button>
         </div>
-      </main>
+
+        <!-- LOGIC GIỮ NGUYÊN -->
+        <button id="paymentBtn" class="btn btn-success" disabled onclick="processPayment()">
+          💰 Thanh Toán 199.000đ
+        </button>
+    </div>
+    </main>
+  </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Keyboard Shortcuts Modal -->
+  <div id="shortcutsModal" class="shortcuts-modal" onclick="closeShortcutsModal(event)">
+    <div class="shortcuts-content" onclick="event.stopPropagation()">
+      <h3>⌨️ Phím tắt</h3>
+      <div class="shortcut-item">
+        <span>Tìm kiếm</span>
+        <div class="shortcut-keys"><span class="shortcut-key">/</span></div>
+      </div>
+      <div class="shortcut-item">
+        <span>Dashboard</span>
+        <div class="shortcut-keys">
+          <span class="shortcut-key">G</span>
+          <span class="shortcut-key">D</span>
+        </div>
+      </div>
+      <div class="shortcut-item">
+        <span>Tài liệu</span>
+        <div class="shortcut-keys">
+          <span class="shortcut-key">G</span>
+          <span class="shortcut-key">T</span>
+        </div>
+      </div>
+      <div class="shortcut-item">
+        <span>Trang cá nhân</span>
+        <div class="shortcut-keys">
+          <span class="shortcut-key">G</span>
+          <span class="shortcut-key">P</span>
+        </div>
+      </div>
+      <div class="shortcut-item">
+        <span>Nâng cấp Premium</span>
+        <div class="shortcut-keys">
+          <span class="shortcut-key">G</span>
+          <span class="shortcut-key">U</span>
+        </div>
+      </div>
+      <div class="shortcut-item">
+        <span>Đổi theme</span>
+        <div class="shortcut-keys"><span class="shortcut-key">T</span></div>
+      </div>
+      <div class="shortcut-item">
+        <span>Đăng xuất</span>
+        <div class="shortcut-keys"><span class="shortcut-key">L</span></div>
+      </div>
+      <div class="shortcut-item">
+        <span>Hiển thị phím tắt</span>
+        <div class="shortcut-keys"><span class="shortcut-key">?</span></div>
+      </div>
+      <div class="shortcut-item">
+        <span>Đóng modal</span>
+        <div class="shortcut-keys"><span class="shortcut-key">Esc</span></div>
+      </div>
+      <button class="btn btn-secondary" style="width: 100%; margin-top: 20px" onclick="closeShortcutsModal()">
+        Đóng
+      </button>
     </div>
   </div>
 
@@ -126,4 +206,5 @@
   <!-- JS LOGIC -->
   <script src="js/payment.js"></script>
 </body>
+
 </html>

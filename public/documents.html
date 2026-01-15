@@ -1,17 +1,30 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#3b82f6" />
+  <link rel="manifest" href="manifest.json" />
   <title>Danh Sách Tài Liệu</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css" />
 </head>
 
 <body class="dashboard">
+  <!-- Offline Indicator -->
+  <div id="offlineIndicator" class="offline-indicator">
+    📴 Bạn đang offline - Một số tính năng có thể không hoạt động
+  </div>
+
+  <!-- Theme Toggle Button -->
+  <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()" title="Đổi theme (T)">
+    🌙
+  </button>
+
   <div class="app">
     <!-- SIDEBAR -->
     <aside class="sidebar">
-      <div class="brand" onclick="window.location.href='dashboard.html'" style="cursor:pointer;">
+      <div class="brand" onclick="window.location.href='dashboard.html'" style="cursor: pointer">
         <div class="brand-icon">📚</div>
         <div class="brand-text">
           <div class="brand-name">DTDMEdu</div>
@@ -32,18 +45,20 @@
     <div class="main">
       <header class="topbar">
         <div class="topbar-inner">
+          <button id="sidebarToggle" class="btn-icon" onclick="toggleSidebar()">☰</button>
           <div class="search">
-            <span class="hint">🔎 Tìm kiếm (UI)</span>
-            <input placeholder="Nhập từ khóa..." />
+            <span class="hint">🔎 Tìm kiếm</span>
+            <input id="searchInput" placeholder="Nhập từ khóa..." onkeyup="handleSearch(event)" />
           </div>
 
           <div class="topbar-right">
             <div class="user-chip">
-              <span class="user-dot"></span>
+              <img id="headerAvatar" src="" alt="Avatar" class="header-avatar" style="display: none;">
+              <span class="user-dot" id="headerUserDot"></span>
               <span id="userName">Xin chào!</span>
             </div>
-            <button onclick="window.location.href='dashboard.html'" class="btn btn-secondary">
-              Quay lại Dashboard
+            <button onclick="logout()" class="btn btn-secondary">
+              Đăng Xuất
             </button>
           </div>
         </div>
@@ -58,15 +73,200 @@
             </div>
           </div>
 
+          <!-- Filter Bar -->
+          <div class="filter-bar">
+            <div class="filter-group">
+              <label>Danh mục:</label>
+              <select id="categoryFilter" onchange="filterByCategory()">
+                <option value="all">📁 Tất cả</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>Sắp xếp:</label>
+              <select id="sortFilter" onchange="sortDocuments()">
+                <option value="newest">📅 Mới nhất</option>
+                <option value="oldest">📅 Cũ nhất</option>
+                <option value="downloads">📥 Lượt tải</option>
+                <option value="size">📦 Kích thước</option>
+                <option value="name">🔤 Tên A-Z</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <button id="favoritesFilter" class="filter-btn" onclick="toggleFavoritesFilter()">
+                ⭐ Yêu thích
+              </button>
+            </div>
+            <div class="filter-group view-toggle">
+              <button id="viewGrid" class="view-btn" onclick="setView('grid')" title="Xem dạng lưới">
+                ⊞
+              </button>
+              <button id="viewList" class="view-btn active" onclick="setView('list')" title="Xem dạng danh sách">
+                ≡
+              </button>
+            </div>
+          </div>
+
+          <!-- Recently Viewed -->
+          <div id="recentlyViewedContainer" class="recently-viewed" style="display: none;">
+            <h4>⏱️ Xem gần đây</h4>
+            <div class="recently-viewed-list"></div>
+          </div>
+
           <div id="documentList" class="document-list">
-            <p style="text-align:center; color: rgba(255,255,255,0.6); margin:0;">Đang tải...</p>
+            <p style="
+                  text-align: center;
+                  color: rgba(255, 255, 255, 0.6);
+                  margin: 0;
+                ">
+              Đang tải...
+            </p>
+          </div>
+
+          <!-- Loading More Indicator -->
+          <div id="loadingMore" class="loading-more" style="display: none">
+            <div class="spinner-small"></div>
+            <span>Đang tải thêm...</span>
+          </div>
+
+          <!-- End of List -->
+          <div id="endOfList" class="end-of-list" style="display: none">
+            <span>📄 Đã hiển thị tất cả tài liệu</span>
           </div>
         </div>
       </main>
     </div>
   </div>
 
+  <!-- PDF Preview Modal -->
+  <div id="previewModal" class="preview-modal" onclick="closePreviewModal(event)">
+    <div class="preview-content" onclick="event.stopPropagation()">
+      <div class="preview-header">
+        <h3 id="previewTitle">Xem trước tài liệu</h3>
+        <button class="preview-close" onclick="closePreviewModal()">
+          &times;
+        </button>
+      </div>
+      <div class="preview-body">
+        <iframe id="previewFrame" src="" frameborder="0"></iframe>
+      </div>
+      <div class="preview-footer">
+        <button class="btn btn-secondary" onclick="closePreviewModal()">
+          Đóng
+        </button>
+        <button class="btn btn-primary" id="previewDownloadBtn" onclick="downloadFromPreview()">
+          📥 Tải xuống
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comments Modal -->
+  <div id="commentsModal" class="comments-modal" onclick="closeCommentsModal(event)">
+    <div class="comments-content" onclick="event.stopPropagation()">
+      <div class="comments-header">
+        <h3>💬 Bình luận - <span id="commentsTitle"></span></h3>
+        <button class="preview-close" onclick="closeCommentsModal()">&times;</button>
+      </div>
+
+      <div class="comments-rating-summary" id="ratingSummary">
+        <div class="rating-stars" id="avgRatingStars">⭐⭐⭐⭐⭐</div>
+        <span id="avgRatingText">0.0</span>
+        <span id="ratingCount">(0 đánh giá)</span>
+      </div>
+
+      <div class="comments-form">
+        <div class="rating-input">
+          <label>Đánh giá:</label>
+          <div class="star-rating" id="starRating">
+            <span onclick="setRating(1)" data-star="1">☆</span>
+            <span onclick="setRating(2)" data-star="2">☆</span>
+            <span onclick="setRating(3)" data-star="3">☆</span>
+            <span onclick="setRating(4)" data-star="4">☆</span>
+            <span onclick="setRating(5)" data-star="5">☆</span>
+          </div>
+        </div>
+        <textarea id="commentInput" placeholder="Viết bình luận của bạn..." maxlength="1000"></textarea>
+        <div class="comment-form-actions">
+          <span id="charCount">0/1000</span>
+          <button class="btn btn-primary" onclick="submitComment()">Gửi bình luận</button>
+        </div>
+      </div>
+
+      <div class="comments-list" id="commentsList">
+        <p class="loading-comments">Đang tải bình luận...</p>
+      </div>
+
+      <div id="loadMoreComments" class="load-more-comments" style="display: none;">
+        <button class="btn btn-secondary" onclick="loadMoreComments()">Xem thêm bình luận</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Keyboard Shortcuts Modal -->
+  <div id="shortcutsModal" class="shortcuts-modal" onclick="closeShortcutsModal(event)">
+    <div class="shortcuts-content" onclick="event.stopPropagation()">
+      <h3>⌨️ Phím tắt</h3>
+      <div class="shortcut-item">
+        <span>Tìm kiếm</span>
+        <div class="shortcut-keys"><span class="shortcut-key">/</span></div>
+      </div>
+      <div class="shortcut-item">
+        <span>Dashboard</span>
+        <div class="shortcut-keys">
+          <span class="shortcut-key">G</span>
+          <span class="shortcut-key">D</span>
+        </div>
+      </div>
+      <div class="shortcut-item">
+        <span>Tài liệu</span>
+        <div class="shortcut-keys">
+          <span class="shortcut-key">G</span>
+          <span class="shortcut-key">T</span>
+        </div>
+      </div>
+      <div class="shortcut-item">
+        <span>Trang cá nhân</span>
+        <div class="shortcut-keys">
+          <span class="shortcut-key">G</span>
+          <span class="shortcut-key">P</span>
+        </div>
+      </div>
+      <div class="shortcut-item">
+        <span>Nâng cấp Premium</span>
+        <div class="shortcut-keys">
+          <span class="shortcut-key">G</span>
+          <span class="shortcut-key">U</span>
+        </div>
+      </div>
+      <div class="shortcut-item">
+        <span>Đổi theme</span>
+        <div class="shortcut-keys"><span class="shortcut-key">T</span></div>
+      </div>
+      <div class="shortcut-item">
+        <span>Đăng xuất</span>
+        <div class="shortcut-keys"><span class="shortcut-key">L</span></div>
+      </div>
+      <div class="shortcut-item">
+        <span>Hiển thị phím tắt</span>
+        <div class="shortcut-keys"><span class="shortcut-key">?</span></div>
+      </div>
+      <div class="shortcut-item">
+        <span>Đóng modal</span>
+        <div class="shortcut-keys"><span class="shortcut-key">Esc</span></div>
+      </div>
+      <button class="btn btn-secondary" style="width: 100%; margin-top: 20px" onclick="closeShortcutsModal()">
+        Đóng
+      </button>
+    </div>
+  </div>
+
   <div id="notification" class="notification"></div>
   <script src="js/documents.js"></script>
 </body>
+
 </html>
