@@ -1021,31 +1021,6 @@ app.get("/api/documents/download/:documentId", async (req, res) => {
       } catch (statsError) {
         console.log("⚠️ Warning: Could not update user_stats:", statsError.message);
       }
-=======
-
-        const document = result.rows[0];
-        
-        // Tạo Presigned URL để download (có thời hạn 15 phút - 900 giây)
-        // Người dùng KHÔNG CẦN tài khoản AWS, chỉ cần click link này
-        const downloadUrl = await getSignedUrl(document.s3_key, 900);
-        
-        res.json({ 
-            success: true, 
-            downloadUrl: downloadUrl,
-            document: {
-                id: document.id,
-                title: document.title,
-                original_name: document.original_name,
-                size: document.size
-            }
-        });
-    } catch (error) {
-        console.error('Get download URL error:', error);
-        res.status(500).json({ success: false, message: 'Lỗi server!' });
->>>>>>> 1e0c40a5a44adf1ef48a6096de83509bd9eeb841
-      } catch (statsError) {
-        console.log("⚠️ Warning: Could not update user_stats:", statsError.message);
-      }
     }
 
     // Tạo signed URL để download (có thời hạn 1 giờ)
