@@ -1,5 +1,7 @@
 {
   "version": 2,
+  "buildCommand": "echo 'No build needed for Node.js serverless'",
+  "framework": null,
   "builds": [
     { "src": "api/server.js", "use": "@vercel/node" }
   ],

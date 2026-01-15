@@ -2,16 +2,27 @@
 const { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
-// Cấu hình S3 Client với thông tin từ nhóm AWS
-const s3Client = new S3Client({
-  region: process.env.AWS_REGION || 'ap-southeast-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
-  }
-});
+let _s3Client = null;
+function getS3Client() {
+  if (_s3Client) return _s3Client;
 
-const BUCKET_NAME = process.env.S3_BUCKET_NAME;
+  const region = process.env.AWS_REGION || 'ap-southeast-1';
+  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+
+  // If credentials are provided, use them explicitly; otherwise, allow SDK to use the default chain.
+  const config = { region };
+  if (accessKeyId && secretAccessKey) {
+    config.credentials = { accessKeyId, secretAccessKey };
+  }
+
+  _s3Client = new S3Client(config);
+  return _s3Client;
+}
+
+function getBucketName() {
+  return process.env.S3_BUCKET_NAME;
+}
 
 /**
  * Upload file lên AWS S3 (SDK v3)
@@ -21,6 +32,11 @@ const BUCKET_NAME = process.env.S3_BUCKET_NAME;
  * @returns {Promise<Object>} - Object chứa thông tin file đã upload
  */
 const uploadToS3 = async (fileBuffer, fileName, mimetype) => {
+  const BUCKET_NAME = getBucketName();
+  if (!BUCKET_NAME) {
+    throw new Error('S3 chưa được cấu hình (thiếu S3_BUCKET_NAME)');
+  }
+
   // Tạo key unique cho file - GIỮ NGUYÊN tiếng Việt có dấu
   const timestamp = Date.now();
   const s3Key = `documents/${timestamp}_${fileName}`;
@@ -34,10 +50,11 @@ const uploadToS3 = async (fileBuffer, fileName, mimetype) => {
   });
 
   try {
-    const result = await s3Client.send(command);
+    const result = await getS3Client().send(command);
     
     // Tạo URL location
-    const location = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`;
+    const region = process.env.AWS_REGION || 'ap-southeast-1';
+    const location = `https://${BUCKET_NAME}.s3.${region}.amazonaws.com/${s3Key}`;
     
     return {
       success: true,
@@ -57,13 +74,18 @@ const uploadToS3 = async (fileBuffer, fileName, mimetype) => {
  * @returns {Promise<Boolean>}
  */
 const deleteFromS3 = async (s3Key) => {
+  const BUCKET_NAME = getBucketName();
+  if (!BUCKET_NAME) {
+    throw new Error('S3 chưa được cấu hình (thiếu S3_BUCKET_NAME)');
+  }
+
   const command = new DeleteObjectCommand({
     Bucket: BUCKET_NAME,
     Key: s3Key
   });
 
   try {
-    await s3Client.send(command);
+    await getS3Client().send(command);
     console.log('✅ Đã xóa file khỏi S3:', s3Key);
     return true;
   } catch (error) {
@@ -80,6 +102,11 @@ const deleteFromS3 = async (s3Key) => {
  * @returns {Promise<String>} - Presigned URL
  */
 const getPresignedUrl = async (s3Key, expiresIn = 900) => {
+  const BUCKET_NAME = getBucketName();
+  if (!BUCKET_NAME) {
+    throw new Error('S3 chưa được cấu hình (thiếu S3_BUCKET_NAME)');
+  }
+
   const command = new GetObjectCommand({
     Bucket: BUCKET_NAME,
     Key: s3Key,
@@ -87,7 +114,7 @@ const getPresignedUrl = async (s3Key, expiresIn = 900) => {
 
   try {
     // Tạo link có chữ ký bảo mật, tự động hết hạn sau expiresIn giây
-    const url = await getSignedUrl(s3Client, command, { expiresIn });
+    const url = await getSignedUrl(getS3Client(), command, { expiresIn });
     return url;
   } catch (error) {
     console.error('❌ Lỗi tạo Presigned URL:', error);
@@ -99,5 +126,5 @@ module.exports = {
   uploadToS3,
   deleteFromS3,
   getSignedUrl: getPresignedUrl, // Alias để tương thích với code cũ
-  s3Client
+  getS3Client
 };

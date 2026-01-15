@@ -1,11 +1,25 @@
 const AWS = require('aws-sdk');
 
-// Cấu hình AWS SES
-const ses = new AWS.SES({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_SES_REGION || 'ap-southeast-1' // Singapore region
-});
+let _ses = null;
+function getSesClient() {
+  if (_ses) return _ses;
+
+  const region = process.env.AWS_SES_REGION || process.env.AWS_REGION || 'ap-southeast-1';
+  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+
+  // If credentials are not configured in the environment, don't crash at import time.
+  if (!accessKeyId || !secretAccessKey) {
+    return null;
+  }
+
+  _ses = new AWS.SES({
+    accessKeyId,
+    secretAccessKey,
+    region
+  });
+  return _ses;
+}
 
 /**
  * Gửi email xác nhận đăng ký
@@ -14,6 +28,14 @@ const ses = new AWS.SES({
  * @returns {Promise<Object>}
  */
 const sendWelcomeEmail = async (toEmail, username) => {
+  const ses = getSesClient();
+  if (!ses) {
+    return {
+      success: false,
+      error: 'AWS SES chưa được cấu hình (thiếu AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY)'
+    };
+  }
+
   const fromEmail = process.env.SES_FROM_EMAIL || 'noreply@dtdmedu.com';
   
   const params = {
@@ -131,6 +153,14 @@ Nâng cấp Premium để upload không giới hạn!
  * @returns {Promise<Object>}
  */
 const sendPremiumUpgradeEmail = async (toEmail, username) => {
+  const ses = getSesClient();
+  if (!ses) {
+    return {
+      success: false,
+      error: 'AWS SES chưa được cấu hình (thiếu AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY)'
+    };
+  }
+
   const fromEmail = process.env.SES_FROM_EMAIL || 'noreply@dtdmedu.com';
   
   const params = {
@@ -208,6 +238,14 @@ const sendPremiumUpgradeEmail = async (toEmail, username) => {
  * @param {String} email - Email cần verify
  */
 const verifyEmail = async (email) => {
+  const ses = getSesClient();
+  if (!ses) {
+    return {
+      success: false,
+      error: 'AWS SES chưa được cấu hình (thiếu AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY)'
+    };
+  }
+
   try {
     const result = await ses.verifyEmailIdentity({ EmailAddress: email }).promise();
     console.log(`📧 Đã gửi email verify tới: ${email}`);

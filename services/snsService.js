@@ -1,13 +1,24 @@
 const { SNSClient, PublishCommand } = require("@aws-sdk/client-sns");
 
-// Cấu hình SNS Client với AWS SDK v3
-const snsClient = new SNSClient({ 
-    region: process.env.AWS_REGION || "ap-southeast-1",
-    credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+let _snsClient = null;
+function getSnsClient() {
+    if (_snsClient) return _snsClient;
+
+    const region = process.env.AWS_REGION || "ap-southeast-1";
+    const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+
+    // If credentials are not configured, don't create a broken client.
+    if (!accessKeyId || !secretAccessKey) {
+        return null;
     }
-});
+
+    _snsClient = new SNSClient({
+        region,
+        credentials: { accessKeyId, secretAccessKey }
+    });
+    return _snsClient;
+}
 
 // Topic ARN từ AWS Console
 const TOPIC_ARN = "arn:aws:sns:ap-southeast-1:371016420099:dtdm";
@@ -56,6 +67,14 @@ Truy cập: http://localhost:3000
     `.trim();
 
     try {
+        const snsClient = getSnsClient();
+        if (!snsClient) {
+            return {
+                success: false,
+                error: 'AWS SNS chưa được cấu hình (thiếu AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY)'
+            };
+        }
+
         const params = {
             Subject: subject,
             Message: message,
@@ -113,6 +132,14 @@ Tài khoản Free bao gồm:
     `.trim();
 
     try {
+        const snsClient = getSnsClient();
+        if (!snsClient) {
+            return {
+                success: false,
+                error: 'AWS SNS chưa được cấu hình (thiếu AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY)'
+            };
+        }
+
         const params = {
             Subject: subject,
             Message: message,
