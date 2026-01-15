@@ -1,28 +1,3 @@
-require("dotenv").config();
-const express = require("express");
-const multer = require("multer");
-const bodyParser = require("body-parser");
-const helmet = require("helmet");
-const compression = require("compression");
-const cors = require("cors");
-const path = require("path");
-const fs = require("fs");
-const { v4: uuidv4 } = require("uuid");
-const bcrypt = require("bcrypt");
-const rateLimit = require("express-rate-limit");
-const morgan = require("morgan");
-=======
-require('dotenv').config();
-const express = require('express');
-const multer = require('multer');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const path = require('path');
-const fs = require('fs');
-const os = require('os');
-const { v4: uuidv4 } = require('uuid');
->>>>>>> 1e0c40a5a44adf1ef48a6096de83509bd9eeb841
-
 require('dotenv').config();
 const express = require('express');
 const multer = require('multer');
@@ -84,41 +59,11 @@ app.use(
 
 // Middleware
 app.use(bodyParser.json());
-<<<<<<< HEAD
-app.use(express.static("public"));
-app.use("/uploads", express.static("uploads"));
-app.use("/image", express.static("image"));
-
-// HTTP Request Logging
-// Use 'combined' for production, 'dev' for development
-app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
-
-// ================ RATE LIMITING ================
-// General API rate limit
-const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 phút
-  max: 100, // 100 requests per 15 min
-  message: {
-    success: false,
-    message: "Quá nhiều request! Vui lòng thử lại sau.",
-  },
-});
-
-// Strict limit for auth endpoints (prevent brute force)
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 phút
-  max: 5, // 5 attempts per 15 min
-  message: {
-    success: false,
-    message: "Quá nhiều lần thử! Vui lòng đợi 15 phút.",
-  },
-});
-
-// Upload rate limit
-const uploadLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 giờ
-  max: 20, // 20 uploads per hour
-  message: {
+// Static folders
+app.use(express.static('public'));
+const UPLOAD_DIR = process.env.VERCEL ? path.join(os.tmpdir(), 'uploads') : path.join(__dirname, 'uploads');
+app.use('/uploads', express.static(UPLOAD_DIR));
+app.use('/image', express.static('image'));
 
 // HTTP Request Logging
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
@@ -143,6 +88,14 @@ const authLimiter = rateLimit({
   },
 });
 // Upload rate limit
+const uploadLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 giờ
+  max: 20, // 20 uploads per hour
+  message: {
+    success: false,
+    message: 'Bạn đã upload quá nhiều! Vui lòng thử lại sau.',
+  },
+});
 const uploadLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 giờ
   max: 20, // 20 uploads per hour

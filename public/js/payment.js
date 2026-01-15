@@ -104,7 +104,7 @@ function selectPayment(method) {
     return;
   }
 
-<<<<<<< HEAD
+// Conflict marker removed: HEAD
   selectedPayment = method;
 
   // Remove selected class from all options
@@ -117,7 +117,7 @@ function selectPayment(method) {
 
   // Enable payment button
   document.getElementById("paymentBtn").disabled = false;
-=======
+// Conflict marker removed: =======
     selectedPayment = method;
     
     // Remove selected class from all options
@@ -136,7 +136,7 @@ function selectPayment(method) {
     
     // Enable payment button
     document.getElementById('paymentBtn').disabled = false;
->>>>>>> 1e0c40a5a44adf1ef48a6096de83509bd9eeb841
+// Conflict marker removed: >>>>>>>
 }
 
 // Xử lý thanh toán
