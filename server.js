@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const { v4: uuidv4 } = require('uuid');
 
 // Import database
@@ -31,18 +32,24 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
-app.use('/uploads', express.static('uploads'));
+// In serverless (Vercel), only /tmp is writable.
+const UPLOAD_DIR = process.env.VERCEL ? path.join(os.tmpdir(), 'uploads') : path.join(__dirname, 'uploads');
+app.use('/uploads', express.static(UPLOAD_DIR));
 app.use('/image', express.static('image'));
 
 // Tạo thư mục uploads nếu chưa tồn tại
-if (!fs.existsSync('./uploads')) {
-    fs.mkdirSync('./uploads');
+try {
+    if (!fs.existsSync(UPLOAD_DIR)) {
+        fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+    }
+} catch (err) {
+    console.warn('⚠️  Cannot create upload dir:', UPLOAD_DIR, err.message);
 }
 
 // Cấu hình multer để upload file
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/');
+        cb(null, UPLOAD_DIR);
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -942,17 +949,22 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
-// Test database connection on startup
-db.query('SELECT NOW() as time')
-    .then(() => {
-        console.log('✅ PostgreSQL database connected successfully!');
-    })
-    .catch(err => {
-        console.error('❌ Database connection error:', err.message);
-    });
+// Only start listening when running locally (not in serverless).
+if (require.main === module) {
+    // Test database connection on startup
+    db.query('SELECT NOW() as time')
+        .then(() => {
+            console.log('✅ PostgreSQL database connected successfully!');
+        })
+        .catch(err => {
+            console.error('❌ Database connection error:', err.message);
+        });
 
-app.listen(PORT, () => {
-    console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
-    console.log(`📊 Database: PostgreSQL (${process.env.DB_NAME})`);
-    console.log(`💳 Payment: MoMo & ZaloPay integrated`);
-});
+    app.listen(PORT, () => {
+        console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
+        console.log(`📊 Database: PostgreSQL (${process.env.DB_NAME})`);
+        console.log(`💳 Payment: MoMo & ZaloPay integrated`);
+    });
+} else {
+    module.exports = app;
+}
