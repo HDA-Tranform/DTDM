@@ -20,12 +20,16 @@ const zalopayService = require('./services/zalopayService');
 // Import email service (AWS SES)
 const emailService = require('./services/emailService');
 
+// Import SNS service (AWS SNS)
+const snsService = require('./services/snsService');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
 app.use('/uploads', express.static('uploads'));
 app.use('/image', express.static('image'));
@@ -46,20 +50,23 @@ const storage = multer.diskStorage({
     }
 });
 
+// Không filter file type - chấp nhận mọi loại file như Google Drive
 const fileFilter = (req, file, cb) => {
-    const allowedTypes = ['application/pdf', 'application/msword', 
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-    if (allowedTypes.includes(file.mimetype)) {
-        cb(null, true);
+    // Chỉ block các file nguy hiểm
+    const blockedTypes = ['application/x-msdownload', 'application/x-msdos-program', 'application/x-executable'];
+    if (blockedTypes.includes(file.mimetype)) {
+        cb(new Error('Loại file này không được phép upload vì lý do bảo mật!'), false);
     } else {
-        cb(new Error('Chỉ chấp nhận file PDF hoặc DOC!'), false);
+        cb(null, true); // Chấp nhận tất cả file khác
     }
 };
 
 const upload = multer({ 
     storage: storage,
     fileFilter: fileFilter,
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB
+    limits: { 
+        fileSize: 50 * 1024 * 1024 // 50MB cho Free, Premium có thể tăng
+    }
 });
 
 // API: Đăng ký
@@ -186,6 +193,20 @@ app.post('/api/upload', upload.single('document'), async (req, res) => {
             return res.status(403).json({ success: false, message: 'Bạn đã hết quota! Vui lòng nâng cấp Premium.' });
         }
 
+        // Kiểm tra file size theo gói
+        const maxSize = user.plan === 'premium' ? 50 * 1024 * 1024 : 10 * 1024 * 1024; // Premium: 50MB, Free: 10MB
+        if (req.file.size > maxSize) {
+            // Xóa file đã upload
+            if (fs.existsSync(req.file.path)) {
+                fs.unlinkSync(req.file.path);
+            }
+            const maxSizeMB = user.plan === 'premium' ? '50MB' : '10MB';
+            return res.status(413).json({ 
+                success: false, 
+                message: `File quá lớn! Gói ${user.plan} chỉ cho phép file tối đa ${maxSizeMB}.` 
+            });
+        }
+
         // Upload file lên S3
         const fileBuffer = fs.readFileSync(req.file.path);
         const s3Result = await uploadToS3(fileBuffer, req.file.originalname, req.file.mimetype);
@@ -293,8 +314,9 @@ app.get('/api/documents/download/:documentId', async (req, res) => {
 
         const document = result.rows[0];
         
-        // Tạo signed URL để download (có thời hạn 1 giờ)
-        const downloadUrl = getSignedUrl(document.s3_key, 3600);
+        // Tạo Presigned URL để download (có thời hạn 15 phút - 900 giây)
+        // Người dùng KHÔNG CẦN tài khoản AWS, chỉ cần click link này
+        const downloadUrl = await getSignedUrl(document.s3_key, 900);
         
         res.json({ 
             success: true, 
@@ -518,6 +540,8 @@ app.post('/api/payment/momo-ipn', async (req, res) => {
             // Gửi email thông báo Premium (không chặn response)
             if (userResult.rows.length > 0) {
                 const user = userResult.rows[0];
+                
+                // Gửi email qua SES
                 emailService.sendPremiumUpgradeEmail(user.email, user.username)
                     .then(emailResult => {
                         if (emailResult.success) {
@@ -525,6 +549,16 @@ app.post('/api/payment/momo-ipn', async (req, res) => {
                         }
                     })
                     .catch(err => console.error('Email error:', err));
+                
+                // Gửi thông báo hóa đơn qua SNS
+                snsService.sendPaymentNotification({
+                    username: user.username,
+                    email: user.email,
+                    amount: verifyResult.amount || 199000,
+                    paymentMethod: 'momo',
+                    orderId: verifyResult.orderId,
+                    transactionTime: new Date().toLocaleString('vi-VN')
+                }).catch(err => console.error('SNS error:', err));
             }
         } else {
             // Cập nhật trạng thái failed
@@ -637,6 +671,133 @@ app.post('/api/payment/zalopay/create', async (req, res) => {
     }
 });
 
+// API: ATM Sandbox (Demo) - KHÔNG thu thập số thẻ/CVV
+app.post('/api/payment/atm/test', async (req, res) => {
+    try {
+        const { userId, amount, scenario } = req.body;
+
+        if (!userId || !amount) {
+            return res.status(400).json({
+                success: false,
+                message: 'Thiếu thông tin userId hoặc amount'
+            });
+        }
+
+        const scenarioValue = String(scenario || 'success');
+        const allowedScenarios = new Set(['success', 'insufficient_funds', 'stolen', 'timeout']);
+        if (!allowedScenarios.has(scenarioValue)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Kịch bản test ATM không hợp lệ'
+            });
+        }
+
+        // Lấy thông tin user từ database
+        const userResult = await db.query(
+            'SELECT id, username, email, plan FROM users WHERE id = $1',
+            [userId]
+        );
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy user!'
+            });
+        }
+
+        const user = userResult.rows[0];
+
+        if (user.plan === 'premium') {
+            return res.status(400).json({
+                success: false,
+                message: 'Bạn đã là Premium!'
+            });
+        }
+
+        const orderId = `${Date.now()}_${userId}`;
+        const extraData = {
+            userId: userId,
+            username: user.username,
+            email: user.email,
+            plan: 'premium',
+            scenario: scenarioValue,
+            note: 'ATM sandbox (demo) - no card data collected'
+        };
+
+        await db.query(
+            `INSERT INTO payment_transactions (user_id, order_id, payment_method, amount, status, extra_data)
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [userId, orderId, 'atm_test', amount, 'pending', JSON.stringify(extraData)]
+        );
+
+        const scenarioMessages = {
+            insufficient_funds: 'ATM sandbox: Không đủ tiền',
+            stolen: 'ATM sandbox: Thẻ bị khóa/mất',
+            timeout: 'ATM sandbox: Timeout khi xử lý giao dịch'
+        };
+
+        if (scenarioValue === 'success') {
+            await db.query(
+                `UPDATE users
+                 SET plan = $1, quota = $2, premium_activated_at = CURRENT_TIMESTAMP
+                 WHERE id = $3 AND plan != 'premium'`,
+                ['premium', -1, userId]
+            );
+
+            await db.query(
+                `UPDATE payment_transactions
+                 SET status = $1, updated_at = CURRENT_TIMESTAMP
+                 WHERE order_id = $2`,
+                ['success', orderId]
+            );
+
+            // Gửi email Premium (không chặn response)
+            emailService.sendPremiumUpgradeEmail(user.email, user.username)
+                .then(emailResult => {
+                    if (emailResult.success) {
+                        console.log('✅ Đã gửi email Premium tới:', user.email);
+                    }
+                })
+                .catch(err => console.error('Email error:', err));
+
+            // Gửi thông báo hóa đơn qua SNS
+            snsService.sendPaymentNotification({
+                username: user.username,
+                email: user.email,
+                amount: amount,
+                paymentMethod: 'atm_test',
+                orderId: orderId,
+                transactionTime: new Date().toLocaleString('vi-VN')
+            }).catch(err => console.error('SNS error:', err));
+
+            return res.json({
+                success: true,
+                redirectUrl: 'success.html',
+                orderId
+            });
+        }
+
+        // Failure scenarios
+        await db.query(
+            'UPDATE payment_transactions SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE order_id = $2',
+            ['failed', orderId]
+        );
+
+        return res.status(400).json({
+            success: false,
+            message: scenarioMessages[scenarioValue] || 'ATM sandbox: Giao dịch thất bại',
+            orderId
+        });
+    } catch (error) {
+        console.error('ATM Sandbox Error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi server: ' + error.message
+        });
+    }
+});
+
+
 // API: IPN Callback từ ZaloPay
 app.post('/api/payment/zalopay-ipn', async (req, res) => {
     try {
@@ -682,6 +843,8 @@ app.post('/api/payment/zalopay-ipn', async (req, res) => {
             // Gửi email thông báo Premium (không chặn response)
             if (userResult.rows.length > 0) {
                 const user = userResult.rows[0];
+                
+                // Gửi email qua SES
                 emailService.sendPremiumUpgradeEmail(user.email, user.username)
                     .then(emailResult => {
                         if (emailResult.success) {
@@ -689,6 +852,16 @@ app.post('/api/payment/zalopay-ipn', async (req, res) => {
                         }
                     })
                     .catch(err => console.error('Email error:', err));
+                
+                // Gửi thông báo hóa đơn qua SNS
+                snsService.sendPaymentNotification({
+                    username: user.username,
+                    email: user.email,
+                    amount: verifyResult.amount || 199000,
+                    paymentMethod: 'zalopay',
+                    orderId: verifyResult.appTransId,
+                    transactionTime: new Date().toLocaleString('vi-VN')
+                }).catch(err => console.error('SNS error:', err));
             }
         }
 

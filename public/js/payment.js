@@ -63,6 +63,12 @@ function selectPayment(method) {
     
     // Add selected class to clicked option
     document.getElementById(`${method}-option`).classList.add('selected');
+
+    // Toggle ATM panel
+    const atmPanel = document.getElementById('atmPanel');
+    if (atmPanel) {
+        atmPanel.style.display = method === 'atm' ? 'block' : 'none';
+    }
     
     // Enable payment button
     document.getElementById('paymentBtn').disabled = false;
@@ -80,7 +86,6 @@ async function processPayment() {
         return;
     }
 
-    const paymentName = selectedPayment === 'momo' ? 'MoMo' : 'ZaloPay';
     const amount = 199000; // 199.000đ
     
     // Disable button để tránh click nhiều lần
@@ -101,6 +106,10 @@ async function processPayment() {
         } else if (selectedPayment === 'zalopay') {
             endpoint = `${API_URL}/payment/zalopay/create`;
             requestBody.description = `Nâng cấp Premium - ${currentUser.username}`;
+        } else if (selectedPayment === 'atm') {
+            endpoint = `${API_URL}/payment/atm/test`;
+            const scenarioEl = document.getElementById('atmScenario');
+            requestBody.scenario = scenarioEl ? scenarioEl.value : 'success';
         }
 
         const response = await fetch(endpoint, {
@@ -121,17 +130,19 @@ async function processPayment() {
             } else if (selectedPayment === 'zalopay') {
                 // ZaloPay dùng orderUrl
                 window.location.href = data.orderUrl;
+            } else if (selectedPayment === 'atm') {
+                window.location.href = data.redirectUrl || 'success.html';
             }
         } else {
             showNotification(data.message || 'Có lỗi xảy ra khi tạo thanh toán!', 'error');
             paymentBtn.disabled = false;
-            paymentBtn.textContent = 'Thanh Toán Ngay';
+            paymentBtn.textContent = 'Thanh Toán 199.000đ';
         }
     } catch (error) {
         console.error('Payment Error:', error);
         showNotification('Lỗi kết nối server!', 'error');
         paymentBtn.disabled = false;
-        paymentBtn.textContent = 'Thanh Toán Ngay';
+        paymentBtn.textContent = 'Thanh Toán 199.000đ';
     }
 }
 

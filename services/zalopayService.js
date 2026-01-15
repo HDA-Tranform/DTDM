@@ -7,6 +7,8 @@ class ZaloPayService {
         this.appId = parseInt(process.env.ZALOPAY_APPID) || 554;
         this.key1 = process.env.ZALOPAY_KEY1;
         this.key2 = process.env.ZALOPAY_KEY2;
+        // ZaloPay OpenAPI sandbox create endpoint
+        // Docs commonly use: https://sb-openapi.zalopay.vn/v2/create
         this.endpoint = process.env.ZALOPAY_ENDPOINT || 'https://sb-openapi.zalopay.vn/v2/create';
         this.redirectUrl = process.env.ZALOPAY_REDIRECT_URL;
         this.ipnUrl = process.env.ZALOPAY_IPN_URL;
@@ -14,8 +16,16 @@ class ZaloPayService {
         console.log('ZaloPay Config:', {
             appId: this.appId,
             endpoint: this.endpoint,
-            redirectUrl: this.redirectUrl
+            redirectUrl: this.redirectUrl,
+            ipnUrl: this.ipnUrl
         });
+    }
+
+    validateConfig() {
+        if (!this.appId) return 'Thiếu cấu hình ZALOPAY_APPID';
+        if (!this.key1) return 'Thiếu cấu hình ZALOPAY_KEY1';
+        if (!this.key2) return 'Thiếu cấu hình ZALOPAY_KEY2';
+        return null;
     }
 
     /**
@@ -27,6 +37,14 @@ class ZaloPayService {
      */
     async createPayment(orderId, amount, description, embedData = {}) {
         try {
+            const configError = this.validateConfig();
+            if (configError) {
+                return {
+                    success: false,
+                    message: configError
+                };
+            }
+
             const transID = Date.now();
             const appTransId = `${moment().format('YYMMDD')}_${transID}`;
 
@@ -36,7 +54,7 @@ class ZaloPayService {
                 ...embedData
             };
 
-            // Tạo order theo format ZaloPay TPE (Third Party Ecommerce)
+            // Tạo order theo format ZaloPay OpenAPI v2/create
             const order = {
                 app_id: this.appId,
                 app_user: String(embedData.userId || 'user'),
@@ -50,9 +68,13 @@ class ZaloPayService {
                     itemquantity: 1
                 }]),
                 embed_data: JSON.stringify(embedDataObj),
-                description: description,
-                bank_code: "zalopayapp"
+                description: description
             };
+
+            // callback_url (IPN) để ZaloPay gọi về server xác nhận thanh toán
+            if (this.ipnUrl) {
+                order.callback_url = this.ipnUrl;
+            }
 
             // Tạo MAC theo format: app_id|app_trans_id|app_user|amount|app_time|embed_data|item
             const data = `${order.app_id}|${order.app_trans_id}|${order.app_user}|${order.amount}|${order.app_time}|${order.embed_data}|${order.item}`;
@@ -65,9 +87,19 @@ class ZaloPayService {
             console.log('ZaloPay MAC Data:', data);
             console.log('ZaloPay Request:', JSON.stringify(order, null, 2));
 
-            // Gọi API ZaloPay
-            const response = await axios.post(this.endpoint, null, {
-                params: order
+            // Gọi API ZaloPay: yêu cầu form-urlencoded body (không gửi query params)
+            const form = new URLSearchParams();
+            Object.entries(order).forEach(([key, value]) => {
+                if (value !== undefined && value !== null) {
+                    form.append(key, String(value));
+                }
+            });
+
+            const response = await axios.post(this.endpoint, form.toString(), {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                timeout: 15000
             });
 
             console.log('ZaloPay Response:', response.data);
@@ -82,16 +114,24 @@ class ZaloPayService {
             } else {
                 const returnCode = response.data.return_code || response.data.returncode;
                 const returnMsg = response.data.return_message || response.data.returnmessage || 'Không xác định';
+
+                const subReturnCode = response.data.sub_return_code;
+                const subReturnMsg = response.data.sub_return_message;
+
+                const details =
+                    subReturnCode !== undefined || subReturnMsg
+                        ? ` | sub: ${subReturnCode ?? 'N/A'} - ${subReturnMsg ?? 'Không xác định'}`
+                        : '';
                 return {
                     success: false,
-                    message: `Lỗi ZaloPay (${returnCode}): ${returnMsg}`
+                    message: `Lỗi ZaloPay (${returnCode}): ${returnMsg}${details}`
                 };
             }
         } catch (error) {
             console.error('ZaloPay Error:', error.response?.data || error.message);
             return {
                 success: false,
-                message: 'Lỗi kết nối ZaloPay: ' + (error.response?.data?.return_message || error.message)
+                message: 'Lỗi kết nối ZaloPay: ' + (error.response?.data?.return_message || error.response?.data?.returnmessage || error.message)
             };
         }
     }
