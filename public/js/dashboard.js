@@ -208,6 +208,7 @@ function logout() {
   window.location.href = "login.html";
 }
 
+<<<<<<< HEAD
 // ================ PROGRESSIVE WEB APP (PWA) ================
 let deferredPrompt;
 
@@ -460,3 +461,7 @@ window.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("online", updateOnlineStatus);
   window.addEventListener("offline", updateOnlineStatus);
 });
+=======
+// Load khi trang được tải
+window.addEventListener('DOMContentLoaded', loadUserInfo);
+>>>>>>> 1e0c40a5a44adf1ef48a6096de83509bd9eeb841

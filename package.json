@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "build": "echo 'No build step needed for Node.js serverless'"
   },
   "keywords": [
     "document",
@@ -15,6 +16,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.965.0",
+    "@aws-sdk/client-sns": "^3.965.0",
+    "@aws-sdk/s3-request-presigner": "^3.965.0",
     "aws-sdk": "^2.1693.0",
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",

@@ -31,10 +31,10 @@
 
       <div class="menu">
         <div class="menu-title">Menu</div>
-        <a class="menu-item active" href="dashboard.html">🏠 Dashboard</a>
-        <a class="menu-item" href="documents.html">📄 Tài liệu</a>
-        <a class="menu-item" href="profile.html">👤 Trang cá nhân</a>
-        <a class="menu-item" href="payment.html">⭐ Nâng cấp</a>
+        <a class="menu-item active" href="dashboard.html">Dashboard</a>
+        <a class="menu-item" href="documents.html"> Tài liệu</a>
+        <a class="menu-item" href="profile.html">Trang cá nhân</a>
+        <a class="menu-item" href="payment.html">Nâng cấp</a>
       </div>
     </aside>
 
@@ -43,12 +43,15 @@
       <!-- TOPBAR -->
       <header class="topbar">
         <div class="topbar-inner">
+<<<<<<< HEAD
           <button id="sidebarToggle" class="btn-icon" onclick="toggleSidebar()">☰</button>
           <div class="search" aria-label="Search">
             <span class="hint">🔎 Tìm kiếm</span>
             <input id="searchInput" placeholder="Nhập từ khóa..." onkeyup="handleSearch(event)" />
           </div>
 
+=======
+>>>>>>> 1e0c40a5a44adf1ef48a6096de83509bd9eeb841
           <div class="topbar-right">
             <div class="user-chip">
               <img id="headerAvatar" src="" alt="Avatar" class="header-avatar" style="display: none;">
@@ -67,13 +70,13 @@
         <!-- Actions -->
         <div class="grid-3" style="margin-bottom: 14px">
           <button onclick="window.location.href='documents.html'" class="btn btn-secondary">
-            📄 Xem Tài Liệu
+            Xem Tài Liệu
           </button>
           <button onclick="window.location.href='profile.html'" class="btn btn-warning">
-            👤 Trang Cá Nhân
+            Trang Cá Nhân
           </button>
           <button onclick="window.location.href='payment.html'" class="btn btn-success">
-            ⭐ Nâng Cấp Gói
+            Nâng Cấp Gói
           </button>
         </div>
 
@@ -124,6 +127,7 @@
 
             <div class="form-group">
               <label>File (PDF hoặc DOC, tối đa 10MB)</label>
+<<<<<<< HEAD
               <!-- Drag & Drop Zone -->
               <div class="drop-zone" id="dropZone" onclick="document.getElementById('docFile').click()">
                 <div class="drop-zone-icon">📁</div>
@@ -133,6 +137,11 @@
                 <p class="drop-zone-hint">
                   Hỗ trợ: PDF, DOC, DOCX (tối đa 10MB)
                 </p>
+=======
+              <div class="file-input-wrapper">
+                <input type="file" id="docFile" accept="*" onchange="updateFileName()" required>
+                <label for="docFile" class="file-input-label">Nhấn để chọn file</label>
+>>>>>>> 1e0c40a5a44adf1ef48a6096de83509bd9eeb841
               </div>
               <input type="file" id="docFile" accept=".pdf,.doc,.docx" onchange="updateFileName()" style="display: none"
                 required />

@@ -915,6 +915,7 @@ textarea:focus {
     scroll-behavior: auto !important;
   }
 }
+<<<<<<< HEAD
 
 /* ================ LOADING SPINNER ================ */
 .loading-overlay {
@@ -2304,3 +2305,6 @@ textarea:focus {
 .btn-icon:hover {
   background: rgba(255, 255, 255, 0.1);
 }
+=======
+/* ==========================
+>>>>>>> 1e0c40a5a44adf1ef48a6096de83509bd9eeb841

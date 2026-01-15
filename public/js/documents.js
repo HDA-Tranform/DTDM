@@ -649,47 +649,9 @@ async function loadDocuments(reset = false) {
     "userName"
   ).textContent = `Xin chào, ${currentUser.username}!`;
 
-  // Update Header Avatar
-  const avatarImg = document.getElementById("headerAvatar");
-  const userDot = document.getElementById("headerUserDot");
-  if (avatarImg && currentUser.avatar_url) {
-    avatarImg.src = currentUser.avatar_url.includes("?")
-      ? `${currentUser.avatar_url}&_t=${Date.now()}`
-      : `${currentUser.avatar_url}?_t=${Date.now()}`;
-    avatarImg.style.display = "block";
-    if (userDot) userDot.style.display = "none";
-  } else {
-    if (avatarImg) avatarImg.style.display = "none";
-    if (userDot) userDot.style.display = "block";
-  }
-
-  // Kiểm tra nếu có search query từ URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const searchQuery = urlParams.get("search");
-
-  if (searchQuery && !reset) {
-    document.getElementById("searchInput").value = searchQuery;
-    searchDocuments(searchQuery);
-    return;
-  }
-
-  if (reset) {
-    currentPage = 1;
-    allDocuments = [];
-    hasMoreDocuments = true;
-    document.getElementById("endOfList").style.display = "none";
-  }
-
-  showLoading(true);
-  try {
-    let url = `${API_URL}/documents?page=${currentPage}&limit=${ITEMS_PER_PAGE}`;
-    if (currentCategory !== "all") url += `&category=${currentCategory}`;
-    if (showFavoritesOnly && currentUser)
-      url += `&userId=${currentUser.id}&favorites=true`;
-    else if (currentUser) url += `&userId=${currentUser.id}`;
-
-    const response = await fetch(url);
-    const data = await response.json();
+    try {
+        const response = await fetch(`${API_URL}/documents`);
+        const data = await response.json();
 
     if (data.success) {
       allDocuments = data.documents;
@@ -791,101 +753,69 @@ function displayDocuments(documents) {
     return;
   }
 
-  listContainer.innerHTML = documents
-    .map((doc) => renderDocumentCard(doc))
-    .join("");
+    listContainer.innerHTML = documents.map(doc => {
+        const uploadDate = new Date(doc.upload_date).toLocaleDateString('vi-VN');
+        const fileSize = (doc.size / 1024).toFixed(2); // KB
+        const fileExtension = doc.original_name.split('.').pop().toUpperCase();
+        
+        // Escape HTML và JavaScript để tránh lỗi với ký tự đặc biệt
+        const safeTitle = escapeHtml(doc.title);
+        const safeDescription = escapeHtml(doc.description || 'Không có mô tả');
+        const safeUsername = escapeHtml(doc.username);
+        const safeOriginalName = escapeHtml(doc.original_name);
+        
+        return `
+            <div class="document-item">
+                <div class="document-info">
+                    <h3 style="font-family: var(--font); word-break: break-word;">📄 ${safeTitle}</h3>
+                    <p style="font-family: var(--font); word-break: break-word;">${safeDescription}</p>
+                    <p style="font-size: 0.85em; color: #999; margin-top: 5px; font-family: var(--font);">
+                        Người đăng: <strong>${safeUsername}</strong> | 
+                        Loại: <strong>${fileExtension}</strong> | 
+                        Kích thước: <strong>${fileSize} KB</strong>
+                    </p>
+                </div>
+                <div class="document-meta">
+                    <p>Ngày tải lên</p>
+                    <p><strong>${uploadDate}</strong></p>
+                    <button onclick="downloadDocument(${doc.id}, \`${safeOriginalName.replace(/`/g, '\\`')}\`)" 
+                            class="btn btn-primary" style="margin-top: 10px; padding: 8px 15px;">
+                        Tải xuống
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
-// Append thêm documents cho infinite scroll
-function appendDocuments(documents) {
-  const listContainer = document.getElementById("documentList");
-  listContainer.innerHTML += documents
-    .map((doc) => renderDocumentCard(doc))
-    .join("");
-}
-
-// Render một document card
-function renderDocumentCard(doc) {
-  const uploadDate = new Date(doc.upload_date).toLocaleDateString("vi-VN");
-  const relativeTime = formatRelativeTime(doc.upload_date);
-  const docSize = doc.size || doc.file_size || 0;
-  const fileSize = docSize
-    ? docSize > 1024 * 1024
-      ? (docSize / 1024 / 1024).toFixed(2) + " MB"
-      : (docSize / 1024).toFixed(2) + " KB"
-    : "N/A";
-  const fileExtension = doc.filename
-    ? doc.filename.split(".").pop().toUpperCase()
-    : "FILE";
-  const fileIcon = getFileIcon(doc.filename || "file");
-  const isPDF = doc.filename && doc.filename.toLowerCase().endsWith(".pdf");
-
-  // Escape HTML
-  const safeTitle = escapeHtml(doc.title);
-  const safeDescription = escapeHtml(doc.description || "Không có mô tả");
-  const safeUsername = escapeHtml(doc.username);
-  const safeFilename = escapeHtml(doc.filename || "file");
-
-  const downloadCount = doc.download_count || 0;
-  const isFavorite = doc.is_favorite || false;
-  const categoryName = doc.category_name || "Khác";
-  const categoryIcon = doc.category_icon || "📁";
-
-  return `
-    <div class="document-item" data-id="${doc.id}">
-      <div class="document-info" style="display: flex; align-items: flex-start;">
-        ${fileIcon}
-        <div style="flex: 1;">
-          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-            <h3 style="font-family: var(--font); word-break: break-word; margin: 0;">${safeTitle}</h3>
-            <span class="category-badge">${categoryIcon} ${categoryName}</span>
-          </div>
-          <p style="font-family: var(--font); word-break: break-word; margin: 8px 0; color: rgba(255,255,255,0.7);">${safeDescription}</p>
-          <p style="font-size: 0.85em; color: #999; margin: 0; font-family: var(--font);">
-            👤 ${safeUsername} • ${fileExtension} • ${fileSize} • 📥 ${downloadCount} lượt tải
-          </p>
-        </div>
-      </div>
-      <div class="document-meta">
-        <p style="margin: 0;" data-tooltip="${uploadDate}">📅 ${relativeTime}</p>
-        <div class="document-actions">
-          <button onclick="toggleFavorite(${doc.id}, this)" 
-                  class="favorite-btn ${isFavorite ? "active" : ""}" 
-                  title="${isFavorite ? "Bỏ yêu thích" : "Thêm yêu thích"}">
-            ${isFavorite ? "⭐" : "☆"}
-          </button>
-          ${isPDF
-      ? `
-          <button onclick="openPreviewModal(${doc.id}, '${safeTitle.replace(
-        /'/g,
-        "\\'"
-      )}')" 
-                  class="btn btn-secondary preview-btn" title="Xem trước">
-            👁️ Xem
-          </button>
-          `
-      : ""
-    }
-          <button onclick="downloadDocument(${doc.id}, \`${safeFilename.replace(
-      /`/g,
-      "\\`"
-    )}\`)" 
-                  class="btn btn-primary" style="padding: 8px 15px;">
-            ⬇️ Tải
-          </button>
-          <button onclick="shareDocument('${safeTitle}', '${safeDescription}', ${doc.id
-    })" 
-                  class="share-btn" title="Chia sẻ">
-            📤 Chia sẻ
-          </button>
-          <button id="comment-btn-${doc.id}" onclick="openCommentsModal(${doc.id}, '${safeTitle.replace(/'/g, "\\'")}')" 
-                  class="comment-btn" title="Bình luận">
-            💬 ${doc.comment_count || 0}
-          </button>
-        </div>
-      </div>
-    </div>
-  `;
+// Lấy icon theo loại file
+function getFileIcon(filename, mimetype) {
+    const ext = filename.split('.').pop().toLowerCase();
+    
+    // Documents
+    if (['pdf'].includes(ext)) return '📄';
+    if (['doc', 'docx'].includes(ext)) return '📝';
+    if (['xls', 'xlsx'].includes(ext)) return '📊';
+    if (['ppt', 'pptx'].includes(ext)) return '📽️';
+    if (['txt'].includes(ext)) return '📃';
+    
+    // Images
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'].includes(ext)) return '🖼️';
+    
+    // Videos
+    if (['mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm'].includes(ext)) return '🎥';
+    
+    // Audio
+    if (['mp3', 'wav', 'ogg', 'flac', 'm4a'].includes(ext)) return '🎵';
+    
+    // Archives
+    if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) return '📦';
+    
+    // Code
+    if (['js', 'jsx', 'ts', 'tsx', 'py', 'java', 'cpp', 'c', 'html', 'css'].includes(ext)) return '💻';
+    
+    // Default
+    return '📁';
 }
 
 // Escape HTML để tránh XSS và lỗi hiển thị

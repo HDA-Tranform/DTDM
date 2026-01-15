@@ -6,16 +6,62 @@ const ses = new AWS.SES({
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   region: process.env.AWS_SES_REGION || "ap-southeast-1", // Singapore region
 });
+=======
+let _ses = null;
+function getSesClient() {
+  if (_ses) return _ses;
 
+  const region = process.env.AWS_SES_REGION || process.env.AWS_REGION || 'ap-southeast-1';
+  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+
+  // If credentials are not configured in the environment, don't crash at import time.
+  if (!accessKeyId || !secretAccessKey) {
+    return null;
+  }
+
+  _ses = new AWS.SES({
+    accessKeyId,
+    secretAccessKey,
+    region
+  });
+  return _ses;
+}
+>>>>>>> 1e0c40a5a44adf1ef48a6096de83509bd9eeb841
+
+let _ses = null;
+function getSesClient() {
+  if (_ses) return _ses;
+  const region = process.env.AWS_SES_REGION || process.env.AWS_REGION || 'ap-southeast-1';
+  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+  if (!accessKeyId || !secretAccessKey) {
+    return null;
+  }
+  _ses = new AWS.SES({ accessKeyId, secretAccessKey, region });
+  return _ses;
+}
 /**
- * Gửi email xác nhận đăng ký
  * @param {String} toEmail - Email người nhận
  * @param {String} username - Tên người dùng
  * @returns {Promise<Object>}
  */
 const sendWelcomeEmail = async (toEmail, username) => {
+<<<<<<< HEAD
   const fromEmail = process.env.SES_FROM_EMAIL || "noreply@dtdmedu.com";
 
+=======
+  const ses = getSesClient();
+  if (!ses) {
+    return {
+      success: false,
+      error: 'AWS SES chưa được cấu hình (thiếu AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY)'
+    };
+  }
+
+  const fromEmail = process.env.SES_FROM_EMAIL || 'noreply@dtdmedu.com';
+  
+>>>>>>> 1e0c40a5a44adf1ef48a6096de83509bd9eeb841
   const params = {
     Source: fromEmail,
     Destination: {
@@ -76,6 +122,15 @@ const sendWelcomeEmail = async (toEmail, username) => {
                 </div>
                 <div class="footer">
                   <p>© 2026 DTDM Edu - Powered by AWS RDS & S3</p>
+
+  const ses = getSesClient();
+  if (!ses) {
+    return {
+      success: false,
+      error: 'AWS SES chưa được cấu hình (thiếu AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY)'
+    };
+  }
+  const fromEmail = process.env.SES_FROM_EMAIL || 'noreply@dtdmedu.com';
                   <p>Email này được gửi từ AWS SES</p>
                 </div>
               </div>
@@ -131,8 +186,21 @@ Nâng cấp Premium để upload không giới hạn!
  * @returns {Promise<Object>}
  */
 const sendPremiumUpgradeEmail = async (toEmail, username) => {
+<<<<<<< HEAD
   const fromEmail = process.env.SES_FROM_EMAIL || "noreply@dtdmedu.com";
 
+=======
+  const ses = getSesClient();
+  if (!ses) {
+    return {
+      success: false,
+      error: 'AWS SES chưa được cấu hình (thiếu AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY)'
+    };
+  }
+
+  const fromEmail = process.env.SES_FROM_EMAIL || 'noreply@dtdmedu.com';
+  
+>>>>>>> 1e0c40a5a44adf1ef48a6096de83509bd9eeb841
   const params = {
     Source: fromEmail,
     Destination: {
@@ -210,6 +278,7 @@ const sendPremiumUpgradeEmail = async (toEmail, username) => {
  * @param {String} resetUrl - URL để reset password
  * @returns {Promise<Object>}
  */
+<<<<<<< HEAD
 const sendPasswordResetEmail = async (toEmail, username, resetUrl) => {
   const fromEmail = process.env.SES_FROM_EMAIL || "noreply@dtdmedu.com";
 
@@ -298,6 +367,16 @@ ${resetUrl}
       },
     },
   };
+=======
+const verifyEmail = async (email) => {
+  const ses = getSesClient();
+  if (!ses) {
+    return {
+      success: false,
+      error: 'AWS SES chưa được cấu hình (thiếu AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY)'
+    };
+  }
+>>>>>>> 1e0c40a5a44adf1ef48a6096de83509bd9eeb841
 
   try {
     const result = await ses.sendEmail(params).promise();

@@ -104,6 +104,7 @@ function selectPayment(method) {
     return;
   }
 
+<<<<<<< HEAD
   selectedPayment = method;
 
   // Remove selected class from all options
@@ -116,6 +117,26 @@ function selectPayment(method) {
 
   // Enable payment button
   document.getElementById("paymentBtn").disabled = false;
+=======
+    selectedPayment = method;
+    
+    // Remove selected class from all options
+    document.querySelectorAll('.payment-option').forEach(option => {
+        option.classList.remove('selected');
+    });
+    
+    // Add selected class to clicked option
+    document.getElementById(`${method}-option`).classList.add('selected');
+
+    // Toggle ATM panel
+    const atmPanel = document.getElementById('atmPanel');
+    if (atmPanel) {
+        atmPanel.style.display = method === 'atm' ? 'block' : 'none';
+    }
+    
+    // Enable payment button
+    document.getElementById('paymentBtn').disabled = false;
+>>>>>>> 1e0c40a5a44adf1ef48a6096de83509bd9eeb841
 }
 
 // Xử lý thanh toán
@@ -156,6 +177,7 @@ async function processPayment() {
       requestBody.description = `Nâng cấp Premium - ${currentUser.username}`;
     }
 
+<<<<<<< HEAD
     const response = await fetch(endpoint, {
       method: "POST",
       headers: {
@@ -184,6 +206,70 @@ async function processPayment() {
       paymentBtn.classList.remove("loading");
       paymentBtn.textContent = "💰 Thanh Toán 199.000đ";
       hideLoading();
+=======
+    if (currentUser.plan === 'premium') {
+        showNotification('Bạn đã là Premium!', 'error');
+        return;
+    }
+
+    const amount = 199000; // 199.000đ
+    
+    // Disable button để tránh click nhiều lần
+    const paymentBtn = document.getElementById('paymentBtn');
+    paymentBtn.disabled = true;
+    paymentBtn.textContent = 'Đang xử lý...';
+
+    try {
+        let endpoint = '';
+        let requestBody = {
+            userId: currentUser.id,
+            amount: amount
+        };
+
+        if (selectedPayment === 'momo') {
+            endpoint = `${API_URL}/payment/momo/create`;
+            requestBody.orderInfo = `Nâng cấp Premium - ${currentUser.username}`;
+        } else if (selectedPayment === 'zalopay') {
+            endpoint = `${API_URL}/payment/zalopay/create`;
+            requestBody.description = `Nâng cấp Premium - ${currentUser.username}`;
+        } else if (selectedPayment === 'atm') {
+            endpoint = `${API_URL}/payment/atm/test`;
+            const scenarioEl = document.getElementById('atmScenario');
+            requestBody.scenario = scenarioEl ? scenarioEl.value : 'success';
+        }
+
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Redirect đến trang thanh toán
+            if (selectedPayment === 'momo') {
+                // MoMo có thể dùng payUrl hoặc deeplink
+                window.location.href = data.payUrl;
+            } else if (selectedPayment === 'zalopay') {
+                // ZaloPay dùng orderUrl
+                window.location.href = data.orderUrl;
+            } else if (selectedPayment === 'atm') {
+                window.location.href = data.redirectUrl || 'success.html';
+            }
+        } else {
+            showNotification(data.message || 'Có lỗi xảy ra khi tạo thanh toán!', 'error');
+            paymentBtn.disabled = false;
+            paymentBtn.textContent = 'Thanh Toán 199.000đ';
+        }
+    } catch (error) {
+        console.error('Payment Error:', error);
+        showNotification('Lỗi kết nối server!', 'error');
+        paymentBtn.disabled = false;
+        paymentBtn.textContent = 'Thanh Toán 199.000đ';
+>>>>>>> 1e0c40a5a44adf1ef48a6096de83509bd9eeb841
     }
   } catch (error) {
     console.error("Payment Error:", error);
