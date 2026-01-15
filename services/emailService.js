@@ -6,28 +6,6 @@ const ses = new AWS.SES({
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   region: process.env.AWS_SES_REGION || "ap-southeast-1", // Singapore region
 });
-=======
-let _ses = null;
-function getSesClient() {
-  if (_ses) return _ses;
-
-  const region = process.env.AWS_SES_REGION || process.env.AWS_REGION || 'ap-southeast-1';
-  const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
-
-  // If credentials are not configured in the environment, don't crash at import time.
-  if (!accessKeyId || !secretAccessKey) {
-    return null;
-  }
-
-  _ses = new AWS.SES({
-    accessKeyId,
-    secretAccessKey,
-    region
-  });
-  return _ses;
-}
->>>>>>> 1e0c40a5a44adf1ef48a6096de83509bd9eeb841
 
 let _ses = null;
 function getSesClient() {
@@ -47,10 +25,6 @@ function getSesClient() {
  * @returns {Promise<Object>}
  */
 const sendWelcomeEmail = async (toEmail, username) => {
-<<<<<<< HEAD
-  const fromEmail = process.env.SES_FROM_EMAIL || "noreply@dtdmedu.com";
-
-=======
   const ses = getSesClient();
   if (!ses) {
     return {
@@ -58,6 +32,7 @@ const sendWelcomeEmail = async (toEmail, username) => {
       error: 'AWS SES chưa được cấu hình (thiếu AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY)'
     };
   }
+  const fromEmail = process.env.SES_FROM_EMAIL || "noreply@dtdmedu.com";
 
   const fromEmail = process.env.SES_FROM_EMAIL || 'noreply@dtdmedu.com';
   
@@ -187,9 +162,6 @@ Nâng cấp Premium để upload không giới hạn!
  */
 const sendPremiumUpgradeEmail = async (toEmail, username) => {
 <<<<<<< HEAD
-  const fromEmail = process.env.SES_FROM_EMAIL || "noreply@dtdmedu.com";
-
-=======
   const ses = getSesClient();
   if (!ses) {
     return {
@@ -197,6 +169,7 @@ const sendPremiumUpgradeEmail = async (toEmail, username) => {
       error: 'AWS SES chưa được cấu hình (thiếu AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY)'
     };
   }
+  const fromEmail = process.env.SES_FROM_EMAIL || "noreply@dtdmedu.com";
 
   const fromEmail = process.env.SES_FROM_EMAIL || 'noreply@dtdmedu.com';
   
@@ -229,101 +202,6 @@ const sendPremiumUpgradeEmail = async (toEmail, username) => {
             <body>
               <div class="container">
                 <div class="header">
-                  <h1>🎉 Chúc mừng ${username}!</h1>
-                  <div class="badge">⭐ PREMIUM MEMBER</div>
-                </div>
-                <div class="content">
-                  <h2>Bạn đã nâng cấp thành công!</h2>
-                  
-                  <p><strong>Quyền lợi Premium của bạn:</strong></p>
-                  <ul>
-                    <li>✅ Upload <strong>KHÔNG GIỚI HẠN</strong> tài liệu</li>
-                    <li>✅ Lưu trữ mãi mãi trên AWS S3</li>
-                    <li>✅ Tốc độ download nhanh</li>
-                    <li>✅ Hỗ trợ ưu tiên 24/7</li>
-                  </ul>
-                  
-                  <p>Cảm ơn bạn đã tin tưởng và ủng hộ DTDM Edu! 💖</p>
-                </div>
-              </div>
-            </body>
-            </html>
-          `,
-          Charset: "UTF-8",
-        },
-      },
-    },
-  };
-
-  try {
-    const result = await ses.sendEmail(params).promise();
-    console.log("✅ Đã gửi email Premium tới:", toEmail);
-    return {
-      success: true,
-      messageId: result.MessageId,
-    };
-  } catch (error) {
-    console.error("❌ Lỗi gửi email SES:", error);
-    return {
-      success: false,
-      error: error.message,
-    };
-  }
-};
-
-/**
- * Gửi email reset password
- * @param {String} toEmail - Email người nhận
- * @param {String} username - Tên người dùng
- * @param {String} resetUrl - URL để reset password
- * @returns {Promise<Object>}
- */
-<<<<<<< HEAD
-const sendPasswordResetEmail = async (toEmail, username, resetUrl) => {
-  const fromEmail = process.env.SES_FROM_EMAIL || "noreply@dtdmedu.com";
-
-  const params = {
-    Source: fromEmail,
-    Destination: {
-      ToAddresses: [toEmail],
-    },
-    Message: {
-      Subject: {
-        Data: "🔐 Yêu cầu đặt lại mật khẩu - DTDM Edu",
-        Charset: "UTF-8",
-      },
-      Body: {
-        Html: {
-          Data: `
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <meta charset="UTF-8">
-              <style>
-                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-                .button { display: inline-block; padding: 15px 30px; background: #e74c3c; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold; }
-                .warning { background: #fff3cd; border: 1px solid #ffc107; padding: 15px; border-radius: 5px; margin: 20px 0; }
-                .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
-              </style>
-            </head>
-            <body>
-              <div class="container">
-                <div class="header">
-                  <h1>🔐 Đặt Lại Mật Khẩu</h1>
-                </div>
-                <div class="content">
-                  <h2>Xin chào ${username}!</h2>
-                  <p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.</p>
-                  
-                  <p>Click vào nút bên dưới để đặt mật khẩu mới:</p>
-                  
-                  <center>
-                    <a href="${resetUrl}" class="button">
-                      🔑 Đặt Lại Mật Khẩu
-                    </a>
                   </center>
                   
                   <div class="warning">

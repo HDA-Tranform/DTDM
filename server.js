@@ -34,18 +34,13 @@ const snsService = require('./services/snsService');
 
 const PORT = process.env.PORT || 3000;
 
-// 1. Gzip Compression (Hiệu suất)
 app.use(compression());
-
-// 2. Helmet Security Headers (Bảo mật)
 app.use(
   helmet({
-    contentSecurityPolicy: false, // Tắt CSP để tránh lỗi với script inline/external hiện tại
+    contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
   })
 );
-
-// 3. CORS
 app.use(
   cors({
     origin: process.env.ALLOWED_ORIGINS
@@ -56,109 +51,63 @@ app.use(
     credentials: true,
   })
 );
-
-// Middleware
 app.use(bodyParser.json());
-// Static folders
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
 const UPLOAD_DIR = process.env.VERCEL ? path.join(os.tmpdir(), 'uploads') : path.join(__dirname, 'uploads');
 app.use('/uploads', express.static(UPLOAD_DIR));
 app.use('/image', express.static('image'));
-
-// HTTP Request Logging
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 // ================ RATE LIMITING ================
-// General API rate limit
 const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 phút
-  max: 100, // 100 requests per 15 min
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   message: {
     success: false,
     message: 'Quá nhiều request! Vui lòng thử lại sau.',
   },
 });
-// Strict limit for auth endpoints (prevent brute force)
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 phút
-  max: 5, // 5 attempts per 15 min
+  windowMs: 15 * 60 * 1000,
+  max: 5,
   message: {
     success: false,
     message: 'Quá nhiều lần thử! Vui lòng đợi 15 phút.',
   },
 });
-// Upload rate limit
 const uploadLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 giờ
-  max: 20, // 20 uploads per hour
+  windowMs: 60 * 60 * 1000,
+  max: 20,
   message: {
     success: false,
     message: 'Bạn đã upload quá nhiều! Vui lòng thử lại sau.',
   },
 });
-const uploadLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 giờ
-  max: 20, // 20 uploads per hour
-  message: {
-    success: false,
-    message: 'Bạn đã upload quá nhiều! Vui lòng thử lại sau.',
-  },
-});
-// Apply general limiter to all API routes
 app.use('/api/', generalLimiter);
-    success: false,
-    message: "Bạn đã upload quá nhiều! Vui lòng thử lại sau.",
-  },
-});
-
-// Apply general limiter to all API routes
-app.use("/api/", generalLimiter);
-
-// Tạo thư mục uploads nếu chưa tồn tại
-if (!fs.existsSync("./uploads")) {
-  fs.mkdirSync("./uploads");
-=======
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static('public'));
-// In serverless (Vercel), only /tmp is writable.
-const UPLOAD_DIR = process.env.VERCEL ? path.join(os.tmpdir(), 'uploads') : path.join(__dirname, 'uploads');
-app.use('/uploads', express.static(UPLOAD_DIR));
-app.use('/image', express.static('image'));
 
 // Tạo thư mục uploads nếu chưa tồn tại
 try {
-    if (!fs.existsSync(UPLOAD_DIR)) {
-        fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-    }
+  if (!fs.existsSync(UPLOAD_DIR)) {
+    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+  }
 } catch (err) {
-    console.warn('⚠️  Cannot create upload dir:', UPLOAD_DIR, err.message);
->>>>>>> 1e0c40a5a44adf1ef48a6096de83509bd9eeb841
+  console.warn('⚠️  Cannot create upload dir:', UPLOAD_DIR, err.message);
 }
 
-// Cấu hình multer để upload file
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/");
+    cb(null, UPLOAD_DIR);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + "-" + file.originalname);
-  },
-=======
-    destination: (req, file, cb) => {
-        cb(null, UPLOAD_DIR);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + '-' + file.originalname);
-    }
->>>>>>> 1e0c40a5a44adf1ef48a6096de83509bd9eeb841
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + '-' + file.originalname);
+  }
 });
 
 // Cấu hình lưu file upload đúng thư mục, tương thích server thường và serverless
 // (UPLOAD_DIR đã được xác định ở trên)
 
-// Không filter file type - chấp nhận mọi loại file như Google Drive
 const fileFilter = (req, file, cb) => {
   const allowedTypes = [
     "application/pdf",
@@ -176,23 +125,6 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-=======
-    // Chỉ block các file nguy hiểm
-    const blockedTypes = ['application/x-msdownload', 'application/x-msdos-program', 'application/x-executable'];
-    if (blockedTypes.includes(file.mimetype)) {
-        cb(new Error('Loại file này không được phép upload vì lý do bảo mật!'), false);
-    } else {
-        cb(null, true); // Chấp nhận tất cả file khác
-    }
-};
-
-const upload = multer({ 
-    storage: storage,
-    fileFilter: fileFilter,
-    limits: { 
-        fileSize: 50 * 1024 * 1024 // 50MB cho Free, Premium có thể tăng
-    }
->>>>>>> 1e0c40a5a44adf1ef48a6096de83509bd9eeb841
 });
 
 // Chỉ accept PDF/DOC/DOCX, max 10MB (chuẩn DTDM)
@@ -604,31 +536,11 @@ app.post(
       // Lấy signed URL cho avatar (dài hạn 7 ngày)
       const avatarUrl = getSignedUrl(s3Result.s3Key, 7 * 24 * 3600);
 
-<<<<<<< HEAD
       // Cập nhật avatar URL trong database
       await db.query(
         "UPDATE users SET avatar_url = $1, avatar_s3_key = $2 WHERE id = $3",
         [avatarUrl, s3Result.s3Key, userId]
       );
-=======
-        // Kiểm tra file size theo gói
-        const maxSize = user.plan === 'premium' ? 50 * 1024 * 1024 : 10 * 1024 * 1024; // Premium: 50MB, Free: 10MB
-        if (req.file.size > maxSize) {
-            // Xóa file đã upload
-            if (fs.existsSync(req.file.path)) {
-                fs.unlinkSync(req.file.path);
-            }
-            const maxSizeMB = user.plan === 'premium' ? '50MB' : '10MB';
-            return res.status(413).json({ 
-                success: false, 
-                message: `File quá lớn! Gói ${user.plan} chỉ cho phép file tối đa ${maxSizeMB}.` 
-            });
-        }
-
-        // Upload file lên S3
-        const fileBuffer = fs.readFileSync(req.file.path);
-        const s3Result = await uploadToS3(fileBuffer, req.file.originalname, req.file.mimetype);
->>>>>>> 1e0c40a5a44adf1ef48a6096de83509bd9eeb841
 
       res.json({
         success: true,
@@ -1106,7 +1018,6 @@ app.get("/api/documents/download/:documentId", async (req, res) => {
             [userId]
           );
         }
-<<<<<<< HEAD
       } catch (statsError) {
         console.log("⚠️ Warning: Could not update user_stats:", statsError.message);
       }
@@ -1132,6 +1043,9 @@ app.get("/api/documents/download/:documentId", async (req, res) => {
         console.error('Get download URL error:', error);
         res.status(500).json({ success: false, message: 'Lỗi server!' });
 >>>>>>> 1e0c40a5a44adf1ef48a6096de83509bd9eeb841
+      } catch (statsError) {
+        console.log("⚠️ Warning: Could not update user_stats:", statsError.message);
+      }
     }
 
     // Tạo signed URL để download (có thời hạn 1 giờ)
@@ -1572,7 +1486,6 @@ app.post("/api/payment/momo-ipn", async (req, res) => {
         ["success", verifyResult.transId, verifyResult.orderId]
       );
 
-<<<<<<< HEAD
       console.log(`User ${userId} upgraded to Premium via MoMo`);
 
       // Gửi email thông báo Premium (không chặn response)
@@ -1609,6 +1522,29 @@ app.post("/api/payment/momo-ipn", async (req, res) => {
                     transactionTime: new Date().toLocaleString('vi-VN')
                 }).catch(err => console.error('SNS error:', err));
 >>>>>>> 1e0c40a5a44adf1ef48a6096de83509bd9eeb841
+      console.log(`User ${userId} upgraded to Premium via MoMo`);
+
+      // Gửi email thông báo Premium (không chặn response)
+      if (userResult.rows.length > 0) {
+        const user = userResult.rows[0];
+        emailService
+          .sendPremiumUpgradeEmail(user.email, user.username)
+          .then((emailResult) => {
+            if (emailResult.success) {
+              console.log("✅ Đã gửi email Premium tới:", user.email);
+            }
+          })
+          .catch((err) => console.error("Email error:", err));
+        // Gửi thông báo hóa đơn qua SNS
+        snsService.sendPaymentNotification({
+          username: user.username,
+          email: user.email,
+          amount: verifyResult.amount || 199000,
+          paymentMethod: 'momo',
+          orderId: verifyResult.orderId,
+          transactionTime: new Date().toLocaleString('vi-VN')
+        }).catch(err => console.error('SNS error:', err));
+      }
             }
           })
           .catch((err) => console.error("Email error:", err));
@@ -1891,7 +1827,6 @@ app.post("/api/payment/zalopay-ipn", async (req, res) => {
         ["success", userId]
       );
 
-<<<<<<< HEAD
       console.log(`User ${userId} upgraded to Premium via ZaloPay`);
 
       // Gửi email thông báo Premium (không chặn response)
@@ -1928,6 +1863,29 @@ app.post("/api/payment/zalopay-ipn", async (req, res) => {
                     transactionTime: new Date().toLocaleString('vi-VN')
                 }).catch(err => console.error('SNS error:', err));
 >>>>>>> 1e0c40a5a44adf1ef48a6096de83509bd9eeb841
+      console.log(`User ${userId} upgraded to Premium via ZaloPay`);
+
+      // Gửi email thông báo Premium (không chặn response)
+      if (userResult.rows.length > 0) {
+        const user = userResult.rows[0];
+        emailService
+          .sendPremiumUpgradeEmail(user.email, user.username)
+          .then((emailResult) => {
+            if (emailResult.success) {
+              console.log("✅ Đã gửi email Premium tới:", user.email);
+            }
+          })
+          .catch((err) => console.error("Email error:", err));
+        // Gửi thông báo hóa đơn qua SNS
+        snsService.sendPaymentNotification({
+          username: user.username,
+          email: user.email,
+          amount: verifyResult.amount || 199000,
+          paymentMethod: 'zalopay',
+          orderId: verifyResult.appTransId,
+          transactionTime: new Date().toLocaleString('vi-VN')
+        }).catch(err => console.error('SNS error:', err));
+      }
             }
           })
           .catch((err) => console.error("Email error:", err));
@@ -2045,7 +2003,6 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "login.html"));
 });
 
-<<<<<<< HEAD
 // Test database connection on startup
 db.query("SELECT NOW() as time")
   .then(() => {
@@ -2081,3 +2038,22 @@ if (require.main === module) {
     module.exports = app;
 }
 >>>>>>> 1e0c40a5a44adf1ef48a6096de83509bd9eeb841
+// Only start listening when running locally (not in serverless).
+if (require.main === module) {
+  // Test database connection on startup
+  db.query('SELECT NOW() as time')
+    .then(() => {
+      console.log('✅ PostgreSQL database connected successfully!');
+    })
+    .catch(err => {
+      console.error('❌ Database connection error:', err.message);
+    });
+
+  app.listen(PORT, () => {
+    console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
+    console.log(`📊 Database: PostgreSQL (${process.env.DB_NAME})`);
+    console.log(`💳 Payment: MoMo & ZaloPay integrated`);
+  });
+} else {
+  module.exports = app;
+}
